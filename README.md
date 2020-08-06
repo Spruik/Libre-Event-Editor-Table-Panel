@@ -146,9 +146,7 @@ $ cd ./Libre-Event-Editor-Table-Panel
 ~/Libre-Event-Editor-Table-Panel
 $ npm install
 ...
-added 714 packages from 399 contributors and audited 719 packages in 11.871s
-found 42 vulnerabilities (11 low, 6 moderate, 25 high)
-  run `npm audit fix` to fix them, or `npm audit` for details
+added 620 packages in 12.055s
 ```
 
 Install Grunt globally
@@ -183,7 +181,7 @@ Copied 1 file
 
 Running "babel:dist" (babel) task
 
-Done, without errors.
+Done.
 
 ```
 
@@ -228,7 +226,10 @@ Running "clean:0" (clean) task
 >> 1 path cleaned.
 
 Running "clean:1" (clean) task
->> 0 paths cleaned.
+>> 1 path cleaned.
+
+Running "clean:2" (clean) task
+>> 1 path cleaned.
 
 Running "copy:src_to_dist" (copy) task
 Created 3 directories, copied 9 files
@@ -251,7 +252,10 @@ Running "babel:dist" (babel) task
 Running "compress:main" (compress) task
 >> Compressed 50 files.
 
-Done, without errors.
+Running "compress:tar" (compress) task
+>> Compressed 50 files.
+
+Done.
 
 ```
 
@@ -266,6 +270,13 @@ For any issue, there are fundamentally three ways an individual can contribute:
 - By helping to resolve the issue: Typically, this is done either in the form of demonstrating that the issue reported is not a problem after all, or more often, by opening a Pull Request that changes some bit of something in the panel in a concrete and reviewable manner.
 
 ## Change log
+
+- 1.0.2 Add tar build output
+  - Remove unused libraries
+  - Npm audit fix
+  - Add tar build output
+  - Update README shell output
+  - Revision Bump
 
 - 1.0.1 Documentation Update
   - Fix subtitle & project path
