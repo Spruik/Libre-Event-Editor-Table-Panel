@@ -1,40 +1,78 @@
 import { PanelPlugin } from '@grafana/data';
-import { SimpleOptions } from './types';
-import { SimplePanel } from './SimplePanel';
+import { LibreEventEditorTableOptions, CustomFieldConfig } from './types';
+import { LibreEventEditorTablePanel } from './LibreEventEditorTablePanel';
+import  { TableCellDisplayMode } from '@grafana/ui';
 
-export const plugin = new PanelPlugin<SimpleOptions>(SimplePanel).setPanelOptions(builder => {
-  return builder
+export const plugin = new PanelPlugin<LibreEventEditorTableOptions, CustomFieldConfig>(LibreEventEditorTablePanel)
+  .setNoPadding()
+  .useFieldConfig({
+    useCustomConfig: (builder) => {
+      builder
+        .addNumberInput({
+          path: 'width', 
+          name: 'Column Width',
+          settings: {
+            placeholder: 'auto',
+            min: 20,
+            max: 300
+          },
+          shouldApply: () => true
+        })
+        .addRadio({
+          path: 'align',
+          name: 'Column aligment',
+          settings: {
+            options: [
+              { label: 'auto', value: null },
+              { label: 'left', value: 'left' },
+              { label: 'center', value: 'center' },
+              { label: 'right', value: 'right' },
+            ],
+          },
+          defaultValue: null,
+        })
+        .addSelect({
+          path: 'displayMode',
+          name: 'Cell display mode',
+          description: 'Color text, background, show as gauge, etc',
+          settings: {
+            options: [
+              { value: TableCellDisplayMode.Auto, label: 'Auto' },
+              { value: TableCellDisplayMode.ColorText, label: 'Color text' },
+              { value: TableCellDisplayMode.ColorBackground, label: 'Color background' },
+              { value: TableCellDisplayMode.GradientGauge, label: 'Gradient gauge' },
+              { value: TableCellDisplayMode.LcdGauge, label: 'LCD gauge' },
+              { value: TableCellDisplayMode.BasicGauge, label: 'Basic gauge' },
+              { value: TableCellDisplayMode.JSONView, label: 'JSON View' },
+              { value: TableCellDisplayMode.Image, label: 'Image' },
+            ],
+          },
+        })
+        .addBooleanSwitch({
+          path: 'filterable',
+          name: 'Column filter',
+          description: 'Enables/disables field filters in table',
+          defaultValue: false,
+        });
+      }
+    })
+  .setPanelOptions((builder) => {
+    builder.addBooleanSwitch({
+      path: 'showHeader',
+      name: 'Show header',
+      description: "To display table's header or not to display",
+      defaultValue: true,
+    })
     .addTextInput({
-      path: 'text',
-      name: 'Simple text option',
-      description: 'Description of panel option',
-      defaultValue: 'Default value of text input option',
+      path: 'eventMetric',
+      name: 'Event Metric',
+      description: 'Name of Query Metric with Event Data',
+      defaultValue: `Events`,
     })
-    .addBooleanSwitch({
-      path: 'showSeriesCount',
-      name: 'Show series counter',
-      defaultValue: false,
-    })
-    .addRadio({
-      path: 'seriesCountSize',
-      defaultValue: 'sm',
-      name: 'Series counter size',
-      settings: {
-        options: [
-          {
-            value: 'sm',
-            label: 'Small',
-          },
-          {
-            value: 'md',
-            label: 'Medium',
-          },
-          {
-            value: 'lg',
-            label: 'Large',
-          },
-        ],
-      },
-      showIf: config => config.showSeriesCount,
+    .addTextInput({
+      path: 'reasonMetric',
+      name: 'Reason Metric',
+      description: 'Name of Query Metric with Reason Data',
+      defaultValue: `Reasons`,
     });
-});
+  });
