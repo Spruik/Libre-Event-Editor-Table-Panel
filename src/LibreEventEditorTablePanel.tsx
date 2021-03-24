@@ -1,10 +1,9 @@
 import React, { PureComponent  } from 'react';
 
-import { AppEvents, AppEvent, AlertPayload, AlertErrorPayload, DataFrame, PanelData, PanelProps, BusEventBase, PanelEvents, EventBusSrv } from '@grafana/data';
+import { AppEvents, DataFrame, PanelData, PanelProps, BusEventBase, EventBusSrv } from '@grafana/data';
 import { LibreEventEditorTableOptions, MachineEvent, Reason, MACHINE_EVENT_COLUMNS, REASON_COLUMNS } from 'types';
-// import { css } from 'emotion';
 import { HorizontalGroup, Modal, Button } from '@grafana/ui';
-import { getDataSourceSrv, SystemJS, DashboardInfo } from '@grafana/runtime';
+import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
 
 const { alertError, alertSuccess } = AppEvents;
 
@@ -12,8 +11,9 @@ interface Props extends PanelProps<LibreEventEditorTableOptions> {
 }
 
 interface State {
-  machineEvent: MachineEvent | null,
-  bus: EventBusSrv
+  machineEvent: MachineEvent | null;
+  bus: EventBusSrv;
+  busEventName: string;
 }
 
 export class RefreshEvent extends BusEventBase {
@@ -25,7 +25,8 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     super(props);
     this.state = {
       machineEvent: null,
-      bus: new EventBusSrv()
+      bus: new EventBusSrv(),
+      busEventName: ''
     };
   }
 
@@ -160,37 +161,47 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
             `)
               .then((payload: Response) => {
                 if (payload?.status == 200) {
-                  this.alert(alertSuccess, `Event Updated`)
-                  
-                  this.props.eventBus.publish(new RefreshEvent())
-                  
+                  this.dashboardAlert(alertSuccess, `Event Updated`)
+                  this.refreshDashboard()
                   this.dismissModal();
                 }
               })
           } catch (error: any) {
-            this.alert(alertError, `Failed to Update: ${error}`)
+            this.dashboardAlert(alertError, `Failed to Update: ${error}`)
           }
         })
         .catch((err: Error) => {
-          this.alert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}': ${err}`)
+          this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}': ${err}`)
         })
     } else {
-      this.alert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}'`)
+      this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}'`)
     }
   }
 
-  alert = (type: AppEvent<AlertPayload | AlertErrorPayload>, msg: string ) => {
+  dashboardAlert = (type: any, msg: string ) => {
     SystemJS.load('app/core/app_events')
       .then((events: any) => {
         events.emit(type, [msg]);
       })
   }
 
-  test = () => {
-    this.props.eventBus.publish(new RefreshEvent());
-    const { bus } = this.state;
-
-    bus.emit(PanelEvents.refresh);
+  refreshDashboard = () => {
+    //
+    // TODO: This is such a hack and needs to be replaced with something better
+    // Source: https://community.grafana.com/t/refresh-the-dashboard-from-the-react-panel-plugin/31255/7
+    //
+    const refreshPicker = document.getElementsByClassName('refresh-picker');
+    if (refreshPicker.length > 0) {
+      const btnGroup = refreshPicker[0].getElementsByClassName('button-group');
+      if (btnGroup.length > 0){ 
+        const buttons = btnGroup[0].getElementsByClassName('toolbar-button')
+        if (buttons.length > 0){ 
+          const button = buttons[0];
+          // @ts-ignore
+          button.click()
+        }
+      }
+    }
   }
 
   dismissModal = () => {
@@ -218,7 +229,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
             <HorizontalGroup spacing="lg">
               {reasons.length > 0 &&
                 reasons.map((reason) => {
-                  return (<Button size={"md"} onClick={() => {this.setReason(machineEvent, reason)}}>{reason.text}</Button>)
+                  return (<Button key={reason.id} size={"md"} onClick={() => {this.setReason(machineEvent, reason)}}>{reason.text}</Button>)
                 })}
             </HorizontalGroup>
           </Modal>
@@ -226,33 +237,32 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
       }
       <table width={width}>
         <thead>
-          <th>Start</th>
-          <th>End</th>
-          <th>Duration</th>
-          <th>Time Category</th>
-          <th>Reason</th>
-          <th>Comment</th>
+          <tr>
+            <th>Start</th>
+            <th>End</th>
+            <th>Duration</th>
+            <th>Time Category</th>
+            <th>Reason</th>
+            <th>Comment</th>
+          </tr>
         </thead>
         <tbody>
           { events.length > 0 &&
           events.map((event) => {
             return (
-              <>
-                <tr onClick={(e) => {return this.onRowClick(e, event)}}>
-                  <td>{event.startDateTime}</td>
-                  <td>{event.endDateTime}</td>
-                  <td>{event.duration}</td>
-                  <td>{event.timeType}</td>
-                  <td>{event.reason}</td>
-                  <td>{event.comment}</td>
-                </tr>
-              </>
+              <tr onClick={(e) => {return this.onRowClick(e, event)}} key={event.id}>
+                <td>{event.startDateTime}</td>
+                <td>{event.endDateTime}</td>
+                <td>{event.duration}</td>
+                <td>{event.timeType}</td>
+                <td>{event.reason}</td>
+                <td>{event.comment}</td>
+              </tr>
             )
           })
           }
         </tbody>
       </table>
-      <Button onClick={this.test}>Test</Button>
     </>
   }
 }
