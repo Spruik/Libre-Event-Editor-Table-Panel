@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "panel",
   "name": "libre-event-editor-table-panel",
-  "id": "libre-libre-event-editor-table-panel",
+  "id": "libre-event-editor-table-panel",
   "info": {
     "description": "Libre Grafana Panel to assign Downtime Event Reasons",
     "author": {

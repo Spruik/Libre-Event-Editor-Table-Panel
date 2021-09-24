@@ -4,7 +4,7 @@ import { LibreEventEditorTablePanel } from './LibreEventEditorTablePanel';
 
 export const plugin = new PanelPlugin<LibreEventEditorTableOptions>(LibreEventEditorTablePanel)
   .setNoPadding()
-  .setPanelOptions((builder) => {
+  .setPanelOptions(builder => {
     builder
       .addTextInput({
         path: 'eventMetric',
@@ -19,4 +19,3 @@ export const plugin = new PanelPlugin<LibreEventEditorTableOptions>(LibreEventEd
         defaultValue: `Reasons`,
       });
   });
-  
