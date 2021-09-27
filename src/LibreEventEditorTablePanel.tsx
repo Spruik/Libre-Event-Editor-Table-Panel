@@ -145,6 +145,10 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     }
   };
 
+  onMouseHover = (e: any) => {
+    e.target.style.background = 'red';
+  };
+
   setReason = (equipment:Equipment,event: MachineEvent, reason: Reason) => {
     const eventsRequest = this.props.data.request?.targets.find(target => {
       return target.refId === this.props.options.eventMetric;
@@ -283,6 +287,9 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
                   <tr
                     onClick={e => {
                       return this.onRowClick(e, event);
+                    }}
+                    onMouseOver={e => {
+                      return this.onMouseHover(e);
                     }}
                     key={event.startDateTime}
                   >
