@@ -7,10 +7,12 @@ import {
   BusEventBase,
   EventBusSrv,
   dateTimeAsMoment,
+  dateTimeFormatWithAbbrevation,
 } from '@grafana/data';
 import { LibreEventEditorTableOptions, MachineEvent, Reason, Equipment } from 'types';
 import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
 import ReasonPanel from './ReasonPanel';
+import { duration } from 'moment';
 
 const { alertError, alertSuccess } = AppEvents;
 
@@ -25,6 +27,23 @@ interface State {
 
 export class RefreshEvent extends BusEventBase {
   static type = 'refresh';
+}
+
+function formatSecsAsDaysHrsMinsSecs(seconds: number) {
+
+  console.log(seconds)
+
+  const day = Math.floor(seconds / (24 * 3600));
+  const hour = Math.floor((seconds - day * 24 * 3600) / (60 * 60));
+  const minute = Math.floor((seconds - day * 24 * 3600 - hour * 60 * 60) / 60);
+  const second = Math.floor(seconds - day * 24 * 3600 - hour * 60 * 60 - minute * 60);
+
+  return (
+    `${day ? `${day} Days ` : ''}` +
+    `${hour ? `${hour} Hours ` : ''}` +
+    `${minute ? `${minute} Minutes ` : ''}` +
+    `${second ? `${second} Seconds ,` : ''}`
+  );
 }
 
 export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State> {
@@ -379,7 +398,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     console.log(this.props);
 
     return (
-      <>
+      <div>
         {machineEvent ? (
           <ReasonPanel
             machineEvent={machineEvent}
@@ -423,7 +442,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
                   >
                     <td>{dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
                     <td>{event.endDateTime && dateTimeAsMoment(event.endDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
-                    <td></td>
+                    <td>{formatSecsAsDaysHrsMinsSecs(event.duration)}</td>
                     <td>{event.timeType}</td>
                     <td>{event.reason}</td>
                     <td>{event.comment}</td>
@@ -432,7 +451,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
               })}
           </tbody>
         </table>
-      </>
+      </div>
     );
   }
 }
