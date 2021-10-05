@@ -1,10 +1,16 @@
 import React, { PureComponent } from 'react';
-
-import { AppEvents, DataFrame, PanelData, PanelProps, BusEventBase, EventBusSrv } from '@grafana/data';
-//import { LibreEventEditorTableOptions, MachineEvent, Reason, MACHINE_EVENT_COLUMNS, REASON_COLUMNS } from 'types';
+import {
+  AppEvents,
+  DataFrame,
+  PanelData,
+  PanelProps,
+  BusEventBase,
+  EventBusSrv,
+  dateTimeAsMoment,
+} from '@grafana/data';
 import { LibreEventEditorTableOptions, MachineEvent, Reason, Equipment } from 'types';
-import { HorizontalGroup, Modal, Button } from '@grafana/ui';
 import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
+import ReasonPanel from './ReasonPanel';
 
 const { alertError, alertSuccess } = AppEvents;
 
@@ -33,13 +39,13 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
   }
 
   transformEquipment = (dataFrame: DataFrame | undefined): Equipment => {
-    let equipment:Equipment = {id: ""};
+    let equipment: Equipment = { id: '' };
     if (!dataFrame) {
       return equipment;
     }
     const idField = dataFrame.fields.find(field => field.name === 'id');
     if (idField) {
-      equipment.id = idField.values.get(idField.values.length -1)
+      equipment.id = idField.values.get(idField.values.length - 1);
     }
     return equipment;
   };
@@ -49,6 +55,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
       return [];
     }
 
+    const packMLStatus = dataFrame.fields.find(field => field.name === 'packMLStatus');
     const startTimeField = dataFrame.fields.find(field => field.name === 'startDateTime');
     const endTimeField = dataFrame.fields.find(field => field.name === 'endDateTime');
     const durationField = dataFrame.fields.find(field => field.name === 'duration');
@@ -61,6 +68,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
 
     for (let i = 0; i < dataFrame.length; i++) {
       events.push({
+        packMLStatus: packMLStatus?.values.get(i),
         startDateTime: startTimeField?.values.get(i),
         endDateTime: endTimeField?.values.get(i),
         duration: durationField?.values.get(i),
@@ -84,7 +92,9 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     const classField = dataFrame.fields.find(field => field.name === 'class');
     const labelField = dataFrame.fields.find(field => field.name === 'label');
     const textField = dataFrame.fields.find(field => field.name === 'text');
+    const parentField = dataFrame.fields.find(field => field.name === 'parent');
     const standardValueField = dataFrame.fields.find(field => field.name === 'standardValue');
+    const categoryCode = dataFrame.fields.find(field => field.name === 'category.code');
 
     let reasons: Reason[] = [];
 
@@ -95,14 +105,50 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
         class: classField?.values.get(i),
         label: labelField?.values.get(i),
         text: textField?.values.get(i),
+        parent: parentField?.values.get(i),
         standardValue: standardValueField?.values.get(i),
+        categoryCode: categoryCode?.values.get(i),
       });
     }
 
     return reasons;
   };
 
-  transform = (data: PanelData): { reasons: Reason[]; equipment: Equipment; events: MachineEvent[] } => {
+  transformReasonsWithParents = (dataFrame: DataFrame | undefined): Reason[] => {
+    if (!dataFrame) {
+      return [];
+    }
+
+    const idField = dataFrame.fields.find(field => field.name === 'id');
+    const isActiveField = dataFrame.fields.find(field => field.name === 'isActaive');
+    const classField = dataFrame.fields.find(field => field.name === 'class');
+    const labelField = dataFrame.fields.find(field => field.name === 'label');
+    const textField = dataFrame.fields.find(field => field.name === 'text');
+    const parentField = dataFrame.fields.find(field => field.name === 'parent.id');
+    const standardValueField = dataFrame.fields.find(field => field.name === 'standardValue');
+    const categoryCode = dataFrame.fields.find(field => field.name === 'category.code');
+
+    let reasons: Reason[] = [];
+
+    for (let i = 0; i < dataFrame.length; i++) {
+      reasons.push({
+        id: idField?.values.get(i),
+        isActive: isActiveField?.values.get(i),
+        class: classField?.values.get(i),
+        label: labelField?.values.get(i),
+        text: textField?.values.get(i),
+        parent: parentField?.values.get(i),
+        standardValue: standardValueField?.values.get(i),
+        categoryCode: categoryCode?.values.get(i),
+      });
+    }
+
+    return reasons;
+  };
+
+  transform = (
+    data: PanelData
+  ): { reasons: Reason[]; reasonsWithParents: Reason[]; equipment: Equipment; events: MachineEvent[] } => {
     /*
     const eventSerie: DataFrame | undefined = data.series.find(serie => {
       for (let i = 0; i < MACHINE_EVENT_COLUMNS.length; i++) {
@@ -132,6 +178,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
       equipment: this.transformEquipment(data.series[0]),
       events: this.transformEvents(data.series[1]),
       reasons: this.transformReasons(data.series[2]),
+      reasonsWithParents: this.transformReasonsWithParents(data.series[3]),
     };
   };
 
@@ -146,10 +193,55 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
   };
 
   onMouseHover = (e: any) => {
-    e.target.style.background = 'red';
+    e.target.parentElement.style.background = 'grey';
   };
 
-  setReason = (equipment:Equipment,event: MachineEvent, reason: Reason) => {
+  onMouseLeave = (e: any) => {
+    e.target.parentElement.style.background = null;
+  };
+
+  splitEvent = (equipment: Equipment, event: MachineEvent, newDateTime: Date) => {
+    const eventsRequest = this.props.data.request?.targets.find(target => {
+      return target.refId === this.props.options.eventMetric;
+    });
+
+    if (eventsRequest) {
+      getDataSourceSrv()
+        .get(eventsRequest.datasource)
+        .then(ds => {
+          const firstEventStartTime = dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
+          const secondEventStartTime = dateTimeAsMoment(newDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
+          try {
+            //@ts-ignore
+            ds.request(
+              `
+              mutation{
+                splitEventLogTS(input:[{eventStartTime:"${firstEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}},{eventStartTime:"${secondEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}}]){
+                  eventTime
+                }
+              }
+            `
+            ).then((payload: Response) => {
+              if (payload?.status === 200) {
+                console.log(payload);
+                this.dashboardAlert(alertSuccess, `Event Updated`);
+                this.refreshDashboard();
+                this.dismissModal();
+              }
+            });
+          } catch (error) {
+            this.dashboardAlert(alertError, `Failed to Update: ${error}`);
+          }
+        })
+        .catch((err: Error) => {
+          this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}': ${err}`);
+        });
+    } else {
+      this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}'`);
+    }
+  };
+
+  setReason = (equipment: Equipment, event: MachineEvent, reason: Reason) => {
     const eventsRequest = this.props.data.request?.targets.find(target => {
       return target.refId === this.props.options.eventMetric;
     });
@@ -164,7 +256,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
               `
             mutation
               {
-                updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}"}]){
+                updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}", reasonCategoryCode:"${reason.categoryCode}"}]){
                   equipment{id}
                   eventTime
                   reasonCategoryCode
@@ -197,6 +289,55 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     }
   };
 
+  editComment = (equipment: Equipment, event: MachineEvent, comment: string) => {
+    const eventsRequest = this.props.data.request?.targets.find(target => {
+      return target.refId === this.props.options.eventMetric;
+    });
+
+    if (eventsRequest) {
+      getDataSourceSrv()
+        .get(eventsRequest.datasource)
+        .then(ds => {
+          try {
+            //@ts-ignore
+            ds.request(
+              `
+            mutation
+              {
+                updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, comment: "${comment}"}]){
+                  equipment{id}
+                  eventTime
+                  reasonCategoryCode
+                  reasonCode
+                  reasonText
+                  PackMLStatus
+                  reasonValue
+                  reasonValueUoM
+                  comment
+                  previousTime
+                }
+              }
+            `
+            ).then((payload: Response) => {
+              if (payload?.status === 200) {
+                console.log(payload);
+                this.dashboardAlert(alertSuccess, `Event Updated`);
+                this.refreshDashboard();
+                this.dismissModal();
+              }
+            });
+          } catch (error) {
+            this.dashboardAlert(alertError, `Failed to Update: ${error}`);
+          }
+        })
+        .catch((err: Error) => {
+          this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}': ${err}`);
+        });
+    } else {
+      this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}'`);
+    }
+  };
+
   dashboardAlert = (type: any, msg: string) => {
     SystemJS.load('app/core/app_events').then((events: any) => {
       events.emit(type, [msg]);
@@ -210,14 +351,11 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     //
     const refreshPicker = document.getElementsByClassName('refresh-picker');
     if (refreshPicker.length > 0) {
-      const btnGroup = refreshPicker[0].getElementsByClassName('button-group');
-      if (btnGroup.length > 0) {
-        const buttons = btnGroup[0].getElementsByClassName('toolbar-button');
-        if (buttons.length > 0) {
-          const button = buttons[0];
-          // @ts-ignore
-          button.click();
-        }
+      const buttons = refreshPicker[0].getElementsByClassName('toolbar-button');
+      if (buttons.length > 0) {
+        const button = buttons[0];
+        // @ts-ignore
+        button.click();
       }
     }
   };
@@ -229,8 +367,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
   render() {
     const { width } = this.props;
     const { machineEvent } = this.state;
-
-    const { reasons, equipment, events } = this.transform(this.props.data);
+    const { reasons, equipment, reasonsWithParents, events } = this.transform(this.props.data);
 
     const count = events?.length;
     const reasonCount = reasons?.length;
@@ -239,33 +376,21 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
       return <div>No data</div>;
     }
 
+    console.log(this.props);
+
     return (
       <>
         {machineEvent ? (
-          <Modal
-            isOpen={!!machineEvent}
-            title={'Reason'}
-            onDismiss={this.dismissModal}
-            onClickBackdrop={this.dismissModal}
-          >
-            <p>Select the Reason for this event.</p>
-            <HorizontalGroup spacing="lg">
-              {reasons.length > 0 &&
-                reasons.map(reason => {
-                  return (
-                    <Button
-                      key={reason.id}
-                      size={'md'}
-                      onClick={() => {
-                        this.setReason(equipment, machineEvent, reason);
-                      }}
-                    >
-                      {reason.text}
-                    </Button>
-                  );
-                })}
-            </HorizontalGroup>
-          </Modal>
+          <ReasonPanel
+            machineEvent={machineEvent}
+            equipment={equipment}
+            title={'Event Log Editor'}
+            reasons={reasons.concat(reasonsWithParents)}
+            dismissModal={this.dismissModal}
+            onAssignReason={this.setReason}
+            onSplitEvent={this.splitEvent}
+            onEditComment={this.editComment}
+          ></ReasonPanel>
         ) : (
           <></>
         )}
@@ -291,11 +416,14 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
                     onMouseOver={e => {
                       return this.onMouseHover(e);
                     }}
+                    onMouseLeave={e => {
+                      return this.onMouseLeave(e);
+                    }}
                     key={event.startDateTime}
                   >
-                    <td>{event.startDateTime}</td>
-                    <td>{event.endDateTime}</td>
-                    <td>{event.duration}</td>
+                    <td>{dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
+                    <td>{event.endDateTime && dateTimeAsMoment(event.endDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
+                    <td></td>
                     <td>{event.timeType}</td>
                     <td>{event.reason}</td>
                     <td>{event.comment}</td>

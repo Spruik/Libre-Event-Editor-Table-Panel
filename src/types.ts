@@ -16,6 +16,7 @@ export interface Equipment {
   id: string;
 }
 export interface MachineEvent {
+  packMLStatus: string;
   startDateTime: number;
   endDateTime?: number;
   duration: number;
@@ -25,14 +26,7 @@ export interface MachineEvent {
   comment?: string;
 }
 
-export const REASON_COLUMNS = [
-  'id',
-  'isActive',
-  'class',
-  'label',
-  'text',
-  'standardValue',
-];
+export const REASON_COLUMNS = ['id', 'isActive', 'class', 'label', 'text', 'standardValue'];
 
 export interface Reason {
   id: string;
@@ -40,5 +34,7 @@ export interface Reason {
   class: string;
   label: string;
   text: string;
+  parent: string;
   standardValue: string;
+  categoryCode: string;
 }
