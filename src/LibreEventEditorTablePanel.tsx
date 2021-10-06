@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, {ReactElement, useState } from 'react';
 import {
   AppEvents,
   DataFrame,
@@ -6,13 +6,11 @@ import {
   PanelProps,
   BusEventBase,
   EventBusSrv,
-  dateTimeAsMoment,
-  dateTimeFormatWithAbbrevation,
+  dateTimeAsMoment
 } from '@grafana/data';
 import { LibreEventEditorTableOptions, MachineEvent, Reason, Equipment } from 'types';
 import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
 import ReasonPanel from './ReasonPanel';
-import { duration } from 'moment';
 
 const { alertError, alertSuccess } = AppEvents;
 
@@ -31,8 +29,6 @@ export class RefreshEvent extends BusEventBase {
 
 function formatSecsAsDaysHrsMinsSecs(seconds: number) {
 
-  console.log(seconds)
-
   const day = Math.floor(seconds / (24 * 3600));
   const hour = Math.floor((seconds - day * 24 * 3600) / (60 * 60));
   const minute = Math.floor((seconds - day * 24 * 3600 - hour * 60 * 60) / 60);
@@ -42,22 +38,268 @@ function formatSecsAsDaysHrsMinsSecs(seconds: number) {
     `${day ? `${day} Days ` : ''}` +
     `${hour ? `${hour} Hours ` : ''}` +
     `${minute ? `${minute} Minutes ` : ''}` +
-    `${second ? `${second} Seconds ,` : ''}`
+    `${second ? `${second} Seconds ` : ''}`
   );
 }
 
-export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      machineEvent: null,
-      equipment: null,
-      bus: new EventBusSrv(),
-      busEventName: '',
-    };
+export default function LibreEventEditorTablePanel(props: Props): ReactElement {
+
+  const [machineEvent, setMachineEvent] = useState<MachineEvent | null>(null);
+  // const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [eventBus, setEventBus] = useState<EventBusSrv>(new EventBusSrv());
+  const [eventBusNAme, setEventBusName] = useState<string>('');
+
+  const onRowClick = (e: any, row: MachineEvent) => {
+    const { reasons } = transform(props.data);
+
+    if (reasons && reasons.length > 0) {
+      setMachineEvent(row);
+    }
+  };
+
+  const onMouseHover = (e: any) => {
+    e.target.parentElement.style.background = 'grey';
+  };
+
+  const onMouseLeave = (e: any) => {
+    e.target.parentElement.style.background = null;
+  };
+
+  const splitEvent = (equipment: Equipment, event: MachineEvent, newDateTime: Date) => {
+    const eventsRequest = props.data.request?.targets.find(target => {
+      return target.refId === props.options.eventMetric;
+    });
+
+    if (eventsRequest) {
+      getDataSourceSrv()
+        .get(eventsRequest.datasource)
+        .then(ds => {
+          const firstEventStartTime = dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
+          const secondEventStartTime = dateTimeAsMoment(newDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
+          try {
+            //@ts-ignore
+            ds.request(
+              `
+              mutation{
+                splitEventLogTS(input:[{eventStartTime:"${firstEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}},{eventStartTime:"${secondEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}}]){
+                  eventTime
+                }
+              }
+            `
+            ).then((payload: Response) => {
+              if (payload?.status === 200) {
+                console.log(payload);
+                dashboardAlert(alertSuccess, `Event Updated`);
+                refreshDashboard();
+                dismissModal();
+              }
+            });
+          } catch (error) {
+            dashboardAlert(alertError, `Failed to Update: ${error}`);
+          }
+        })
+        .catch((err: Error) => {
+          dashboardAlert(alertError, `Failed to find Event Metric '${props.options.eventMetric}': ${err}`);
+        });
+    } else {
+      dashboardAlert(alertError, `Failed to find Event Metric '${props.options.eventMetric}'`);
+    }
+  };
+
+  const setReason = (equipment: Equipment, event: MachineEvent, reason: Reason) => {
+    const eventsRequest = props.data.request?.targets.find(target => {
+      return target.refId === props.options.eventMetric;
+    });
+
+    if (eventsRequest) {
+      getDataSourceSrv()
+        .get(eventsRequest.datasource)
+        .then(ds => {
+          try {
+            //@ts-ignore
+            ds.request(
+              `
+            mutation
+              {
+                updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}", reasonCategoryCode:"${reason.categoryCode}"}]){
+                  equipment{id}
+                  eventTime
+                  reasonCategoryCode
+                  reasonCode
+                  reasonText
+                  PackMLStatus
+                  reasonValue
+                  reasonValueUoM
+                  comment
+                  previousTime
+                }
+              }
+            `
+            ).then((payload: Response) => {
+              if (payload?.status === 200) {
+                dashboardAlert(alertSuccess, `Event Updated`);
+                refreshDashboard();
+                dismissModal();
+              }
+            });
+          } catch (error) {
+            dashboardAlert(alertError, `Failed to Update: ${error}`);
+          }
+        })
+        .catch((err: Error) => {
+          dashboardAlert(alertError, `Failed to find Event Metric '${props.options.eventMetric}': ${err}`);
+        });
+    } else {
+      dashboardAlert(alertError, `Failed to find Event Metric '${props.options.eventMetric}'`);
+    }
+  };
+
+  const editComment = (equipment: Equipment, event: MachineEvent, comment: string) => {
+    const eventsRequest = props.data.request?.targets.find(target => {
+      return target.refId === props.options.eventMetric;
+    });
+
+    if (eventsRequest) {
+      getDataSourceSrv()
+        .get(eventsRequest.datasource)
+        .then(ds => {
+          try {
+            //@ts-ignore
+            ds.request(
+              `
+            mutation
+              {
+                updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, comment: "${comment}"}]){
+                  equipment{id}
+                  eventTime
+                  reasonCategoryCode
+                  reasonCode
+                  reasonText
+                  PackMLStatus
+                  reasonValue
+                  reasonValueUoM
+                  comment
+                  previousTime
+                }
+              }
+            `
+            ).then((payload: Response) => {
+              if (payload?.status === 200) {
+                console.log(payload);
+                dashboardAlert(alertSuccess, `Event Updated`);
+                refreshDashboard();
+                dismissModal();
+              }
+            });
+          } catch (error) {
+            dashboardAlert(alertError, `Failed to Update: ${error}`);
+          }
+        })
+        .catch((err: Error) => {
+          dashboardAlert(alertError, `Failed to find Event Metric '${props.options.eventMetric}': ${err}`);
+        });
+    } else {
+      dashboardAlert(alertError, `Failed to find Event Metric '${props.options.eventMetric}'`);
+    }
+  };
+
+  const dashboardAlert = (type: any, msg: string) => {
+    SystemJS.load('app/core/app_events').then((events: any) => {
+      events.emit(type, [msg]);
+    });
+  };
+
+  const refreshDashboard = () => {
+    //
+    // TODO: This is such a hack and needs to be replaced with something better
+    // Source: https://community.grafana.com/t/refresh-the-dashboard-from-the-react-panel-plugin/31255/7
+    //
+    const refreshPicker = document.getElementsByClassName('refresh-picker');
+    if (refreshPicker.length > 0) {
+      const buttons = refreshPicker[0].getElementsByClassName('toolbar-button');
+      if (buttons.length > 0) {
+        const button = buttons[0];
+        // @ts-ignore
+        button.click();
+      }
+    }
+  };
+
+  const dismissModal = () => {
+    setMachineEvent(null);
+  };
+
+
+    const { width } = props;
+    const { reasons, equipment, reasonsWithParents, events } = transform(props.data);
+
+    const count = events?.length;
+    const reasonCount = reasons?.length;
+
+    if (!count || !reasonCount) {
+      return <div>No data</div>;
+    }
+
+    return (
+      <div>
+        {machineEvent ? (
+          <ReasonPanel
+            machineEvent={machineEvent}
+            equipment={equipment}
+            title={'Event Log Editor'}
+            reasons={reasons.concat(reasonsWithParents)}
+            dismissModal={dismissModal}
+            onAssignReason={setReason}
+            onSplitEvent={splitEvent}
+            onEditComment={editComment}
+          ></ReasonPanel>
+        ) : (
+          <></>
+        )}
+        <table width={width}>
+          <thead>
+            <tr>
+              <th>Start</th>
+              <th>End</th>
+              <th>Duration</th>
+              <th>Time Category</th>
+              <th>Reason</th>
+              <th>Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.length > 0 &&
+              events.map(event => {
+                return (
+                  <tr
+                    onClick={e => {
+                      return onRowClick(e, event);
+                    }}
+                    onMouseOver={e => {
+                      return onMouseHover(e);
+                    }}
+                    onMouseLeave={e => {
+                      return onMouseLeave(e);
+                    }}
+                    key={event.startDateTime}
+                  >
+                    <td>{dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
+                    <td>{event.endDateTime && dateTimeAsMoment(event.endDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
+                    <td>{formatSecsAsDaysHrsMinsSecs(event.duration)}</td>
+                    <td>{event.timeType}</td>
+                    <td>{event.reason}</td>
+                    <td>{event.comment}</td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
+    );
   }
 
-  transformEquipment = (dataFrame: DataFrame | undefined): Equipment => {
+
+  const transformEquipment = (dataFrame: DataFrame | undefined): Equipment => {
     let equipment: Equipment = { id: '' };
     if (!dataFrame) {
       return equipment;
@@ -69,7 +311,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     return equipment;
   };
 
-  transformEvents = (dataFrame: DataFrame | undefined): MachineEvent[] => {
+  const transformEvents = (dataFrame: DataFrame | undefined): MachineEvent[] => {
     if (!dataFrame) {
       return [];
     }
@@ -101,7 +343,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     return events;
   };
 
-  transformReasons = (dataFrame: DataFrame | undefined): Reason[] => {
+  const transformReasons = (dataFrame: DataFrame | undefined): Reason[] => {
     if (!dataFrame) {
       return [];
     }
@@ -133,7 +375,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     return reasons;
   };
 
-  transformReasonsWithParents = (dataFrame: DataFrame | undefined): Reason[] => {
+  const transformReasonsWithParents = (dataFrame: DataFrame | undefined): Reason[] => {
     if (!dataFrame) {
       return [];
     }
@@ -165,7 +407,7 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     return reasons;
   };
 
-  transform = (
+  const transform = (
     data: PanelData
   ): { reasons: Reason[]; reasonsWithParents: Reason[]; equipment: Equipment; events: MachineEvent[] } => {
     /*
@@ -194,264 +436,12 @@ export class LibreEventEditorTablePanel extends PureComponent<PanelProps, State>
     });
 */
     return {
-      equipment: this.transformEquipment(data.series[0]),
-      events: this.transformEvents(data.series[1]),
-      reasons: this.transformReasons(data.series[2]),
-      reasonsWithParents: this.transformReasonsWithParents(data.series[3]),
+      equipment: transformEquipment(data.series[0]),
+      events: transformEvents(data.series[1]),
+      reasons: transformReasons(data.series[2]),
+      reasonsWithParents: transformReasonsWithParents(data.series[3]),
     };
   };
 
-  onRowClick = (e: any, row: MachineEvent) => {
-    const { reasons } = this.transform(this.props.data);
+  
 
-    if (reasons && reasons.length > 0) {
-      this.setState({
-        machineEvent: row,
-      });
-    }
-  };
-
-  onMouseHover = (e: any) => {
-    e.target.parentElement.style.background = 'grey';
-  };
-
-  onMouseLeave = (e: any) => {
-    e.target.parentElement.style.background = null;
-  };
-
-  splitEvent = (equipment: Equipment, event: MachineEvent, newDateTime: Date) => {
-    const eventsRequest = this.props.data.request?.targets.find(target => {
-      return target.refId === this.props.options.eventMetric;
-    });
-
-    if (eventsRequest) {
-      getDataSourceSrv()
-        .get(eventsRequest.datasource)
-        .then(ds => {
-          const firstEventStartTime = dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
-          const secondEventStartTime = dateTimeAsMoment(newDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
-          try {
-            //@ts-ignore
-            ds.request(
-              `
-              mutation{
-                splitEventLogTS(input:[{eventStartTime:"${firstEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}},{eventStartTime:"${secondEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}}]){
-                  eventTime
-                }
-              }
-            `
-            ).then((payload: Response) => {
-              if (payload?.status === 200) {
-                console.log(payload);
-                this.dashboardAlert(alertSuccess, `Event Updated`);
-                this.refreshDashboard();
-                this.dismissModal();
-              }
-            });
-          } catch (error) {
-            this.dashboardAlert(alertError, `Failed to Update: ${error}`);
-          }
-        })
-        .catch((err: Error) => {
-          this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}': ${err}`);
-        });
-    } else {
-      this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}'`);
-    }
-  };
-
-  setReason = (equipment: Equipment, event: MachineEvent, reason: Reason) => {
-    const eventsRequest = this.props.data.request?.targets.find(target => {
-      return target.refId === this.props.options.eventMetric;
-    });
-
-    if (eventsRequest) {
-      getDataSourceSrv()
-        .get(eventsRequest.datasource)
-        .then(ds => {
-          try {
-            //@ts-ignore
-            ds.request(
-              `
-            mutation
-              {
-                updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}", reasonCategoryCode:"${reason.categoryCode}"}]){
-                  equipment{id}
-                  eventTime
-                  reasonCategoryCode
-                  reasonCode
-                  reasonText
-                  PackMLStatus
-                  reasonValue
-                  reasonValueUoM
-                  comment
-                  previousTime
-                }
-              }
-            `
-            ).then((payload: Response) => {
-              if (payload?.status === 200) {
-                this.dashboardAlert(alertSuccess, `Event Updated`);
-                this.refreshDashboard();
-                this.dismissModal();
-              }
-            });
-          } catch (error) {
-            this.dashboardAlert(alertError, `Failed to Update: ${error}`);
-          }
-        })
-        .catch((err: Error) => {
-          this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}': ${err}`);
-        });
-    } else {
-      this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}'`);
-    }
-  };
-
-  editComment = (equipment: Equipment, event: MachineEvent, comment: string) => {
-    const eventsRequest = this.props.data.request?.targets.find(target => {
-      return target.refId === this.props.options.eventMetric;
-    });
-
-    if (eventsRequest) {
-      getDataSourceSrv()
-        .get(eventsRequest.datasource)
-        .then(ds => {
-          try {
-            //@ts-ignore
-            ds.request(
-              `
-            mutation
-              {
-                updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, comment: "${comment}"}]){
-                  equipment{id}
-                  eventTime
-                  reasonCategoryCode
-                  reasonCode
-                  reasonText
-                  PackMLStatus
-                  reasonValue
-                  reasonValueUoM
-                  comment
-                  previousTime
-                }
-              }
-            `
-            ).then((payload: Response) => {
-              if (payload?.status === 200) {
-                console.log(payload);
-                this.dashboardAlert(alertSuccess, `Event Updated`);
-                this.refreshDashboard();
-                this.dismissModal();
-              }
-            });
-          } catch (error) {
-            this.dashboardAlert(alertError, `Failed to Update: ${error}`);
-          }
-        })
-        .catch((err: Error) => {
-          this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}': ${err}`);
-        });
-    } else {
-      this.dashboardAlert(alertError, `Failed to find Event Metric '${this.props.options.eventMetric}'`);
-    }
-  };
-
-  dashboardAlert = (type: any, msg: string) => {
-    SystemJS.load('app/core/app_events').then((events: any) => {
-      events.emit(type, [msg]);
-    });
-  };
-
-  refreshDashboard = () => {
-    //
-    // TODO: This is such a hack and needs to be replaced with something better
-    // Source: https://community.grafana.com/t/refresh-the-dashboard-from-the-react-panel-plugin/31255/7
-    //
-    const refreshPicker = document.getElementsByClassName('refresh-picker');
-    if (refreshPicker.length > 0) {
-      const buttons = refreshPicker[0].getElementsByClassName('toolbar-button');
-      if (buttons.length > 0) {
-        const button = buttons[0];
-        // @ts-ignore
-        button.click();
-      }
-    }
-  };
-
-  dismissModal = () => {
-    this.setState({ machineEvent: null });
-  };
-
-  render() {
-    const { width } = this.props;
-    const { machineEvent } = this.state;
-    const { reasons, equipment, reasonsWithParents, events } = this.transform(this.props.data);
-
-    const count = events?.length;
-    const reasonCount = reasons?.length;
-
-    if (!count || !reasonCount) {
-      return <div>No data</div>;
-    }
-
-    console.log(this.props);
-
-    return (
-      <div>
-        {machineEvent ? (
-          <ReasonPanel
-            machineEvent={machineEvent}
-            equipment={equipment}
-            title={'Event Log Editor'}
-            reasons={reasons.concat(reasonsWithParents)}
-            dismissModal={this.dismissModal}
-            onAssignReason={this.setReason}
-            onSplitEvent={this.splitEvent}
-            onEditComment={this.editComment}
-          ></ReasonPanel>
-        ) : (
-          <></>
-        )}
-        <table width={width}>
-          <thead>
-            <tr>
-              <th>Start</th>
-              <th>End</th>
-              <th>Duration</th>
-              <th>Time Category</th>
-              <th>Reason</th>
-              <th>Comment</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.length > 0 &&
-              events.map(event => {
-                return (
-                  <tr
-                    onClick={e => {
-                      return this.onRowClick(e, event);
-                    }}
-                    onMouseOver={e => {
-                      return this.onMouseHover(e);
-                    }}
-                    onMouseLeave={e => {
-                      return this.onMouseLeave(e);
-                    }}
-                    key={event.startDateTime}
-                  >
-                    <td>{dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
-                    <td>{event.endDateTime && dateTimeAsMoment(event.endDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
-                    <td>{formatSecsAsDaysHrsMinsSecs(event.duration)}</td>
-                    <td>{event.timeType}</td>
-                    <td>{event.reason}</td>
-                    <td>{event.comment}</td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-}

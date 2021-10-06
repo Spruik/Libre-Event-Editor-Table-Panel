@@ -1,6 +1,6 @@
 import { PanelPlugin } from '@grafana/data';
 import { LibreEventEditorTableOptions } from './types';
-import { LibreEventEditorTablePanel } from './LibreEventEditorTablePanel';
+import LibreEventEditorTablePanel  from './LibreEventEditorTablePanel';
 
 export const plugin = new PanelPlugin<LibreEventEditorTableOptions>(LibreEventEditorTablePanel)
   .setNoPadding()
