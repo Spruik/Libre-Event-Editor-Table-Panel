@@ -1,42 +1,28 @@
 {
-  "name": "libre-event-editor-table-panel",
-  "version": "1.0.3",
+  "name": "libre-libre-event-editor-table-panel",
+  "version": "1.0.0",
   "description": "Libre Grafana Panel to assign Downtime Event Reasons",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Spruik/Libre-Event-Editor-Table-Panel"
-  },
-  "author": "Spruik Technologies",
-  "bugs": {
-    "url": "https://github.com/Spruik/Libre-Event-Editor-Table-Panel/issues"
-  },
-  "main": "src/module.js",
   "scripts": {
-    "lint": "standard src/*.js Gruntfile.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "grunt build"
+    "build": "grafana-toolkit plugin:build",
+    "test": "grafana-toolkit plugin:test",
+    "dev": "grafana-toolkit plugin:dev",
+    "watch": "grafana-toolkit plugin:dev --watch",
+    "sign": "grafana-toolkit plugin:sign",
+    "start": "yarn watch"
   },
-  "keywords": [
-    "table",
-    "grafana",
-    "plugin",
-    "panel"
-  ],
+  "author": "Tom Hollingworth",
+  "license": "Apache-2.0",
   "devDependencies": {
-    "babel-preset-es2015": "^6.5.0",
-    "grunt": "^1.2.1",
-    "grunt-babel": "~6.0.0",
-    "grunt-contrib-clean": "~0.6.0",
-    "grunt-contrib-compress": "^1.6.0",
-    "grunt-contrib-copy": "~0.8.2",
-    "grunt-contrib-jshint": "^1.0.0",
-    "grunt-contrib-watch": "^1.1.0",
-    "grunt-string-replace": "^1.3.1",
-    "load-grunt-tasks": "^5.1.0",
-    "standard": "^14.3.4"
+    "@grafana/data": "next",
+    "@grafana/toolkit": "latest",
+    "@grafana/ui": "latest",
+    "emotion": "10.0.27"
+  },
+  "engines": {
+    "node": ">=14"
   },
   "dependencies": {
-    "lodash": "^4.17.19",
-    "moment": "^2.12.0"
+    "@grafana/runtime": "^7.4.5",
+    "@types/moment": "^2.13.0"
   }
 }

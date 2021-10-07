@@ -1,10 +1,8 @@
-# Event Editor Table Panel
+# Libre Event Editor Table Panel
 
-> Libre Grafana Panel to assign Downtime Event Reasons
+This panel gives users the ability to list downtime reasons and edit them to assign a reason and comment. Users can also split event to correctly capture downtime information. This panel is part of [Libre](https://github.com/Spruik/Libre). This plugin interfaces to the Libre core GraphQL server. This panel is targeted at Grafana v8.x.x only.
 
-This panel gives users the ability to list downtime reasons and edit them to assign a downtime category, reason and comment. Users can also split event to correctly capture downtime information. This panel is part of [Libre](https://github.com/Spruik/Libre). Downtime categories and reasons are defined in [Libre Reason Code CRUD Tree Chart Panel](https://github.com/Spruik/Libre-Reason-Codes-CRUD-Tree-Chart-Panel). This plugin interfaces to a no security json rest api for materials running on the same grafana server. This panel is targeted at Grafana v6.x.x only.
-
-![Panel](./docs/libre-event-editor-table-panel.gif)
+![Panel](./docs/ScreenRecording.gif)
 
 ## Installation
 
@@ -41,70 +39,100 @@ $ service grafana-server restart
 In order to get the most out of this panel:
 
 1. Add dashboard variables for *Site*, *Area* and *Line* from the database. For example:
-
+```
 | Variable | Definition                                                                                                      |
 |----------|-----------------------------------------------------------------------------------------------------------------|
-| $Site    | `SELECT site FROM equipment`                                                                                    |
-| $Area    | `SELECT area FROM equipment WHERE area IS NOT NULL AND site = '$Site'`                                          |
-| $Line    | `SELECT production_line FROM equipment WHERE production_line IS NOT NULL AND area = '$Area' AND site = '$Site'` |
+| $Site    | query{
+   queryEquipment(filter:{not:{has:parent},and:{not:{isActive:false}}}){
+      __text: name
+      __value: id
+   }
+}                                                                                  |
+| $Area    | query{
+   getEquipment(id:"$site"){
+      children(filter:{not:{isActive:false}}){
+         __text: label
+         __value: id
+      }
+   }
+}                                         |
+| $Line    |query{
+   getEquipment(id:"$area"){
+      children(filter:{not:{isActive:false}}){
+         __text: label
+         __value: id
+      }
+   }
+} |
+```
+2. Add the following 4 queries to the panel
 
-2. Add a *Table* metric to query the held machine state for a given line
-
-```influxdb
-SELECT
-  "Site"
-  ,"Area"
-  ,"Line"
-  ,"status"
-  ,"duration"
-  ,"execute"
-  ,"held"
-  ,"idle"
-  ,"stopped"
-  ,"complete"
-  ,"category"
-  ,"reason"
-  ,"equipment"
-  ,"comment"
-FROM "Availability"
-WHERE $timeFilter
-  AND "Site" = '$Site'
-  AND "Area" = '$Area'
-  AND "Line" = '$Line'
+Equipment
+```   graphql
+   query {
+   getEquipment(id:"${line}"){
+      id
+      name
+   }
+}
+```
+Events
+```graphql
+query{
+  getEquipment(id:"${line}"){
+    id
+    label
+    Events:eventsByField(filter:{filterField:"packMLStatus",filterValue:"Execute",from:"${__from:date:iso}",to:"${__to:date:iso}"}){
+      packMLStatus
+      startDateTime
+      endDateTime
+      duration
+      reasonCategoryCode
+      reasonCode
+      reasonText
+    }
+  }
+}
+```
+Reasons
+```graphql
+query{
+  getEquipment(id:"$line"){
+    id
+    label
+    Reasons:reasonListWithOverrides(filter:{not:{has:parent}}){
+      id
+      isActive
+      class
+      label
+      text
+      parent{id}
+      standardValue
+      category{code}
+    }
+  }
+}
+```
+ReasonsWithParents
+```graphql
+query{
+  getEquipment(id:"$line"){
+    id
+    label
+    Reasons:reasonListWithOverrides(filter:{has:parent}){
+      id
+      isActive
+      class
+      label
+      text
+      parent{id}
+      standardValue
+      category{code}
+    }
+  }
+}
 ```
 
-![Panel Metrics](./docs/libre-event-editor-table-panel-metrics.png)
-
-3. Apply custom column styles:
-
-| Time format should be 'YYYY-MM-DD HH:mm:ss.SSS' to avoid unwanted results.
-
-| Column               | Type   | Name Override | Other                   |
-|----------------------|--------|---------------|-------------------------|
-| Time                 | Date   | Time          | YYYY-MM-DD HH:mm:ss.SSS |
-| duration             | String | Duration      |            -            |
-| status               | String | Status        |            -            |
-| category             | String | Category      |            -            |
-| reason               | String | Reason        |            -            |
-| comment              | String | Comment       |            -            |
-| execute              | Hidden |       -       |            -            |
-| held                 | Hidden |       -       |            -            |
-| idle                 | Hidden |       -       |            -            |
-| stopped              | Hidden |       -       |            -            |
-| complete             | Hidden |       -       |            -            |
-| durationint          | Hidden |       -       |            -            |
-| Site                 | Hidden |       -       |            -            |
-| Area                 | Hidden |       -       |            -            |
-| Line                 | Hidden |       -       |            -            |
-| equipment            | Hidden |       -       |            -            |
-
-4. Configure the panel Row Option `Min Duration:` to the shortest downtime duration to display in minutes. Use this setting to avoid nuisance events. For example 5.
-
-5. Data configuration:
-
-- Measurement:  `Availability`
-- Reason codes: `reason_code`
-- Equipment:    `equipment`
 
 ### Add/Edit Reason
 
@@ -113,153 +141,6 @@ Click the event in the table, select a category and reason. Type in a comment an
 ### Split Reason
 
 Click the event in the table, select a category and reason. Type in a comment and click split. Drag the slider to the correct time to split the event. Alternatively use the edit button, type in the desired timestamp and click save. Use the left/right select to choose which side of the split event to apply the currently selected category, reason and comment too. Click save to split the event.
-
-## Developing
-
-### Getting Started
-
-A docker-compose and grunt script is provided in order to quickly evaluate source code changes. This requires
-
-Prerequisites
-
-- docker (>= 18 required)
-- docker-compose (>= 1.25 required)
-- node (>= 12 required)
-- npm (>= 6 required)
-
-Start by cloning this repository
-
-```shell
-~/
-$ git clone https://github.com/Spruik/Libre-Event-Editor-Table-Panel
-Cloning into 'Libre-Event-Editor-Table-Panel'...
-remote: Enumerating objects: 46, done.
-remote: Counting objects: 100% (46/46), done.
-remote: Compressing objects: 100% (31/31), done.
-remote: Total 46 (delta 13), reused 46 (delta 13), pack-reused 0
-Unpacking objects: 100% (46/46), done.
-```
-
-Enter project and install dependencies
-
-$ cd ./Libre-Event-Editor-Table-Panel
-~/Libre-Event-Editor-Table-Panel
-$ npm install
-...
-added 620 packages in 12.055s
-```
-
-Install Grunt globally
-
-```shell
-$ npm install grunt -g
-C:\Users\user\AppData\Roaming\npm\grunt -> C:\Users\user\AppData\Roaming\npm\node_modules\grunt\bin\grunt
-+ grunt@1.1.0
-updated 1 package in 1.364s
-```
-
-Run grunt to build the panel
-
-```shell
-~/Libre-Event-Editor-Table-Panel
-$ grunt
-Running "copy:src_to_dist" (copy) task
-Created 3 directories, copied 9 files
-
-Running "copy:libs" (copy) task
-Copied 1 file
-
-Running "copy:readme" (copy) task
-Created 1 directory, copied 8 files
-
-Running "string-replace:dist" (string-replace) task
-
-1 files created
-
-Running "copy:pluginDef" (copy) task
-Copied 1 file
-
-Running "babel:dist" (babel) task
-
-Done.
-
-```
-
-Start docker-compose.dev.yml detached
-
-```shell
-~/Libre-Event-Editor-Table-Panel
-$ docker-compose -f docker-compose.dev.yaml up -d
-Creating network "libre-event-editor-table-panel_default" with the default driver
-Creating libre-event-editor-table-panel_postgres_1 ... done
-Creating libre-event-editor-table-panel_influx_1   ... done
-Creating libre-event-editor-table-panel_postrest_1 ... done
-Creating libre-event-editor-table-panel_grafana_1   ... done
-Creating libre-event-editor-table-panel_simulator_1 ... done
-
-```
-
-Run grunt watch to recompile on change
-
-```shell
-~/Libre-Event-Editor-Table-Panel
-$ grunt watch
-Running "watch" task
-Waiting...
-```
-
-Open your favourite editor and start editing ./src files. The grunt watch task will detect this and recompile the panel. Use your favourite web browser and point to http://localhost:3000 login and create a dashboard with this panel. Your browser will need to be refreshed to reflect your changes to this panel, ensure your browser isn't caching files.
-
-### Building
-
-Prerequisites
-
-- node (>= 12 required)
-- npm (>= 6 required)
-
-Build panel and zip into archive
-
-```shell
-~/Libre-Event-Editor-Table-Panel
-$ grunt build
-Running "clean:0" (clean) task
->> 1 path cleaned.
-
-Running "clean:1" (clean) task
->> 1 path cleaned.
-
-Running "clean:2" (clean) task
->> 1 path cleaned.
-
-Running "copy:src_to_dist" (copy) task
-Created 3 directories, copied 9 files
-
-Running "copy:libs" (copy) task
-Copied 1 file
-
-Running "copy:readme" (copy) task
-Created 1 directory, copied 8 files
-
-Running "string-replace:dist" (string-replace) task
-
-1 files created
-
-Running "copy:pluginDef" (copy) task
-Copied 1 file
-
-Running "babel:dist" (babel) task
-
-Running "compress:main" (compress) task
->> Compressed 50 files.
-
-Running "compress:tar" (compress) task
->> Compressed 50 files.
-
-Done.
-
-```
-
-Find a completed build of this panel in the root directory named `libre-event-editor-table-panel.zip`.
 
 ## Contributing
 
@@ -271,20 +152,15 @@ For any issue, there are fundamentally three ways an individual can contribute:
 
 ## Change log
 
-- 1.0.3 Security Fix
-  - Upgrade bl 1.2.2 to 1.2.3
-  - Upgrade ini 1.3.5 to 1.3.8
-  - Bump Revision
-
-- 1.0.2 Add tar build output
-  - Remove unused libraries
-  - Npm audit fix
-  - Add tar build output
-  - Update README shell output
-  - Revision Bump
-
+- 2.0.0 Rebuild in react to suit Grafana v8.x.x
 - 1.0.1 Documentation Update
-  - Fix subtitle & project path
-  - Remove unused grunt config
+   - Fix subtitle & project path
+   - Remove unused grunt config
 
 - 1.0.0 Initial Public Release
+## Learn more
+
+- [Build a panel plugin tutorial](https://grafana.com/tutorials/build-a-panel-plugin)
+- [Grafana documentation](https://grafana.com/docs/)
+- [Grafana Tutorials](https://grafana.com/tutorials/) - Grafana Tutorials are step-by-step guides that help you make the most of Grafana
+- [Grafana UI Library](https://developers.grafana.com/ui) - UI components to help you build interfaces using Grafana Design System
