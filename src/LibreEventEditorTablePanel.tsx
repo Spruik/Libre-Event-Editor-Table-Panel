@@ -8,11 +8,13 @@ import {
   dateTimeAsMoment,
   GrafanaTheme,
 } from '@grafana/data';
+
 import { LibreEventEditorTableOptions, MachineEvent, Reason, Equipment } from 'types';
 import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
 import ReasonPanel from './ReasonPanel';
-import { useStyles } from '@grafana/ui';
-import css  from '@emotion/css';
+import { useStyles, useTheme } from '@grafana/ui';
+import css from '@emotion/css';
+import Example from 'ReactTableComponent';
 
 const { alertError, alertSuccess } = AppEvents;
 
@@ -23,14 +25,15 @@ export class RefreshEvent extends BusEventBase {
 }
 
 const getRowSelectedStyles = (theme: GrafanaTheme) => css`
-background: ${theme.palette.black};
+  background: ${theme.palette.gray05};
+  color: ${theme.palette.black};
 `;
 
 const getRowDeselectedSelectedStyles = (theme: GrafanaTheme) => css`
-background: ${theme.palette.white};
+  background: ${theme.palette.white};
 `;
 
-function formatSecsAsDaysHrsMinsSecs(seconds: number) {
+export function formatSecsAsDaysHrsMinsSecs(seconds: number) {
   const day = Math.floor(seconds / (24 * 3600));
   const hour = Math.floor((seconds - day * 24 * 3600) / (60 * 60));
   const minute = Math.floor((seconds - day * 24 * 3600 - hour * 60 * 60) / 60);
@@ -48,10 +51,6 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
   const [machineEvent, setMachineEvent] = useState<MachineEvent | null>(null);
   const [rowSelected, setRowSelected] = useState<MachineEvent | null>(null);
 
-  // const [equipment, setEquipment] = useState<Equipment | null>(null);
-  // const [eventBus, setEventBus] = useState<EventBusSrv>(new EventBusSrv());
-  // const [eventBusName, setEventBusName] = useState<string>('');
-
   const onRowClick = (e: any, row: MachineEvent) => {
     const { reasons } = transform(props.data);
 
@@ -60,7 +59,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     }
   };
 
-  const onMouseHover = (e:any, event: any) => {
+  const onMouseHover = (e: any, event: any) => {
     setRowSelected(event);
   };
 
@@ -68,7 +67,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     setRowSelected(null);
   };
 
-  const executeMutation = (request: string) =>{
+  const executeMutation = (request: string) => {
     const eventsRequest = props.data.request?.targets.find(target => {
       return target.refId === props.options.eventMetric;
     });
@@ -79,8 +78,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
         .then(ds => {
           try {
             //@ts-ignore
-            ds.request(request)
-            .then((payload: Response) => {
+            ds.request(request).then((payload: Response) => {
               if (payload?.status === 200) {
                 console.log(payload);
                 dashboardAlert(alertSuccess, `Event Updated`);
@@ -98,22 +96,22 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     } else {
       dashboardAlert(alertError, `Failed to find Event Metric '${props.options.eventMetric}'`);
     }
-  }
+  };
 
   const splitEvent = (equipment: Equipment, event: MachineEvent, newDateTime: Date) => {
     const firstEventStartTime = dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
     const secondEventStartTime = dateTimeAsMoment(newDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
-    const request =`mutation{
+    const request = `mutation{
       splitEventLogTS(input:[{eventStartTime:"${firstEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}},{eventStartTime:"${secondEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}}]){
         eventTime
       }
-    }`
+    }`;
 
     executeMutation(request);
   };
 
   const setReason = (equipment: Equipment, event: MachineEvent, reason: Reason) => {
-    const request =`
+    const request = `
     mutation
       {
         updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}", reasonCategoryCode:"${reason.categoryCode}"}]){
@@ -129,14 +127,13 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
           previousTime
         }
       }
-    `
+    `;
 
     executeMutation(request);
   };
 
   const editComment = (equipment: Equipment, event: MachineEvent, comment: string) => {
-
-    const request =  `
+    const request = `
     mutation
       {
         updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, comment: "${comment}"}]){
@@ -152,8 +149,8 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
           previousTime
         }
       }
-    `
-    executeMutation(request);  
+    `;
+    executeMutation(request);
   };
 
   const dashboardAlert = (type: any, msg: string) => {
@@ -185,10 +182,9 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
   //@ts-ignore
   const selectedStyle = useStyles(getRowSelectedStyles);
   //@ts-ignore
-  const deselectedStyle = useStyles(getRowDeselectedSelectedStyles)
+  const deselectedStyle = useStyles(getRowDeselectedSelectedStyles);
 
-
-  const { width } = props;
+  const { height, width } = props;
   const { reasons, equipment, reasonsWithParents, events } = transform(props.data);
 
   const count = events?.length;
@@ -200,7 +196,8 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
 
   return (
     <div>
-      {machineEvent ? (
+      {Example(events,setMachineEvent, useTheme())}
+      {/* {machineEvent ? (
         <ReasonPanel
           machineEvent={machineEvent}
           equipment={equipment}
@@ -225,9 +222,9 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
             <th>Comment</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody style={{height: height, overflowY:'scroll', overflowX: 'hidden'}}>
           {events.length > 0 &&
-            events.map((event) => {
+            events.map(event => {
               return (
                 <tr
                   onClick={e => {
@@ -251,7 +248,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
               );
             })}
         </tbody>
-      </table>
+      </table> */}
     </div>
   );
 }
