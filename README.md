@@ -1,7 +1,8 @@
 # Libre Event Editor Table Panel
 
 This panel gives users the ability to list downtime reasons and edit them to assign a reason and comment. Users can also split event to correctly capture downtime information. This panel is part of [Libre](https://github.com/Spruik/Libre). This plugin interfaces to the Libre core GraphQL server. This panel is targeted at Grafana v8.x.x only.
-![Panel](./docs/ScreenRecording.mov)
+
+![Panel](./docs/ScreenRecording.gif)
 
 ## Installation
 
