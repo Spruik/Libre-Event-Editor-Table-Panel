@@ -97,7 +97,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     const request = `
     mutation
       {
-        updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}", reasonCategoryCode:"${reason.categoryCode}"}]){
+        updateEventLogTS(input:[{eventStartTime:"${dateTimeAsMoment(event.startDateTime).utc().format()}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}", reasonCategoryCode:"${reason.categoryCode}"}]){
           equipment{id}
           eventTime
           reasonCategoryCode
