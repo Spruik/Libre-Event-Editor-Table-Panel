@@ -1,18 +1,9 @@
 import React, { ReactElement, useState } from 'react';
-import {
-  AppEvents,
-  DataFrame,
-  PanelData,
-  PanelProps,
-  BusEventBase,
-  dateTimeAsMoment,
-  GrafanaTheme,
-} from '@grafana/data';
+import { AppEvents, DataFrame, PanelData, PanelProps, BusEventBase, dateTimeAsMoment } from '@grafana/data';
 import { LibreEventEditorTableOptions, MachineEvent, Reason, Equipment } from 'types';
 import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
 import ReasonPanel from './ReasonPanel';
-import { useStyles } from '@grafana/ui';
-import css  from '@emotion/css';
+import { useTheme } from '@grafana/ui';
 
 const { alertError, alertSuccess } = AppEvents;
 
@@ -21,14 +12,6 @@ interface Props extends PanelProps<LibreEventEditorTableOptions> {}
 export class RefreshEvent extends BusEventBase {
   static type = 'refresh';
 }
-
-const getRowSelectedStyles = (theme: GrafanaTheme) => css`
-background: ${theme.palette.black};
-`;
-
-const getRowDeselectedSelectedStyles = (theme: GrafanaTheme) => css`
-background: ${theme.palette.white};
-`;
 
 function formatSecsAsDaysHrsMinsSecs(seconds: number) {
   const day = Math.floor(seconds / (24 * 3600));
@@ -46,11 +29,8 @@ function formatSecsAsDaysHrsMinsSecs(seconds: number) {
 
 export default function LibreEventEditorTablePanel(props: Props): ReactElement {
   const [machineEvent, setMachineEvent] = useState<MachineEvent | null>(null);
-  const [rowSelected, setRowSelected] = useState<MachineEvent | null>(null);
 
-  // const [equipment, setEquipment] = useState<Equipment | null>(null);
-  // const [eventBus, setEventBus] = useState<EventBusSrv>(new EventBusSrv());
-  // const [eventBusName, setEventBusName] = useState<string>('');
+  const theme = useTheme();
 
   const onRowClick = (e: any, row: MachineEvent) => {
     const { reasons } = transform(props.data);
@@ -60,15 +40,17 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     }
   };
 
-  const onMouseHover = (e:any, event: any) => {
-    setRowSelected(event);
+  const onMouseHover = (e: any, event: any) => {
+    e.target.parentElement.style.background = theme.palette.gray95;
+    e.target.parentElement.style.color = theme.palette.black;
   };
 
   const onMouseLeave = (e: any) => {
-    setRowSelected(null);
+    e.target.parentElement.style.background = null;
+    e.target.parentElement.style.color = null;
   };
 
-  const executeMutation = (request: string) =>{
+  const executeMutation = (request: string) => {
     const eventsRequest = props.data.request?.targets.find(target => {
       return target.refId === props.options.eventMetric;
     });
@@ -79,8 +61,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
         .then(ds => {
           try {
             //@ts-ignore
-            ds.request(request)
-            .then((payload: Response) => {
+            ds.request(request).then((payload: Response) => {
               if (payload?.status === 200) {
                 console.log(payload);
                 dashboardAlert(alertSuccess, `Event Updated`);
@@ -98,22 +79,22 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     } else {
       dashboardAlert(alertError, `Failed to find Event Metric '${props.options.eventMetric}'`);
     }
-  }
+  };
 
   const splitEvent = (equipment: Equipment, event: MachineEvent, newDateTime: Date) => {
     const firstEventStartTime = dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
     const secondEventStartTime = dateTimeAsMoment(newDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
-    const request =`mutation{
+    const request = `mutation{
       splitEventLogTS(input:[{eventStartTime:"${firstEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}},{eventStartTime:"${secondEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}}]){
         eventTime
       }
-    }`
+    }`;
 
     executeMutation(request);
   };
 
   const setReason = (equipment: Equipment, event: MachineEvent, reason: Reason) => {
-    const request =`
+    const request = `
     mutation
       {
         updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}", reasonCategoryCode:"${reason.categoryCode}"}]){
@@ -129,14 +110,13 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
           previousTime
         }
       }
-    `
+    `;
 
     executeMutation(request);
   };
 
   const editComment = (equipment: Equipment, event: MachineEvent, comment: string) => {
-
-    const request =  `
+    const request = `
     mutation
       {
         updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, comment: "${comment}"}]){
@@ -152,8 +132,8 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
           previousTime
         }
       }
-    `
-    executeMutation(request);  
+    `;
+    executeMutation(request);
   };
 
   const dashboardAlert = (type: any, msg: string) => {
@@ -181,12 +161,6 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
   const dismissModal = () => {
     setMachineEvent(null);
   };
-
-  //@ts-ignore
-  const selectedStyle = useStyles(getRowSelectedStyles);
-  //@ts-ignore
-  const deselectedStyle = useStyles(getRowDeselectedSelectedStyles)
-
 
   const { width } = props;
   const { reasons, equipment, reasonsWithParents, events } = transform(props.data);
@@ -227,7 +201,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
         </thead>
         <tbody>
           {events.length > 0 &&
-            events.map((event) => {
+            events.map(event => {
               return (
                 <tr
                   onClick={e => {
