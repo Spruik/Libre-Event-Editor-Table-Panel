@@ -81,7 +81,14 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
             ds.request(request).then((payload: Response) => {
               if (payload?.status === 200) {
                 console.log(payload);
-                dashboardAlert(alertSuccess, `Event Updated`);
+                if (payload.data.errors !== undefined){
+                  dashboardAlert(alertError, 
+                    `MUTATION FAILED: ${payload.data.errors[0].message}`);
+                }
+                else {
+                  dashboardAlert(alertSuccess, `Event Updated`);
+                }
+
                 refreshDashboard();
                 dismissModal();
               }
@@ -184,7 +191,6 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
   //@ts-ignore
   const deselectedStyle = useStyles(getRowDeselectedSelectedStyles);
 
-  const { height, width } = props;
   const { reasons, equipment, reasonsWithParents, events } = transform(props.data);
 
   const count = events?.length;
@@ -194,10 +200,12 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     return <div>No data</div>;
   }
 
+  console.log(useTheme())
+
   return (
     <div>
-      {Example(events,setMachineEvent, useTheme())}
-      {/* {machineEvent ? (
+      {Example(events,setMachineEvent, useTheme(),props)}
+      {machineEvent ? (
         <ReasonPanel
           machineEvent={machineEvent}
           equipment={equipment}
@@ -211,7 +219,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
       ) : (
         <></>
       )}
-      <table width={width}>
+      {/* <table width={width}>
         <thead>
           <tr>
             <th>Start</th>

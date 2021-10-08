@@ -3,6 +3,7 @@ import { formatSecsAsDaysHrsMinsSecs } from "LibreEventEditorTablePanel"
 import React from "react"
 import { useTable } from "react-table"
 import styled from 'styled-components'
+import TableScrollbar from 'react-table-scrollbar'
 import { MachineEvent } from "types"
 
 
@@ -21,11 +22,10 @@ function Table({ columns, data, onRowClick }) {
   
     // Render the UI for your table
     return (
-        
-      <table {...getTableProps()}>
+      <table className="fixed_header" {...getTableProps()}>
         <thead>
           {headerGroups.map(headerGroup => (
-            <tr {...headerGroup.getHeaderGroupProps()}>
+            <tr className="header_row" {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map(column => (
                 <th {...column.getHeaderProps()}>{column.render('Header')}</th>
               ))}
@@ -49,54 +49,52 @@ function Table({ columns, data, onRowClick }) {
   }
 
  
-  function Example( events: MachineEvent[], modalPop, theme) {
+  function Example( events: MachineEvent[], modalPop, theme, options) {
     const Styles = styled.div`
-    padding: 1rem;
-   
-    table {
-      
-      border-spacing: 0;
-      height: 200px;
 
-      tbody{
-          overflowY: scroll;
-          height: 50%;
-      }
+    table{
+      width:100%
+
+    }
+
+    padding-left: 5px;
+    
+    .fixed_header{
+      table-layout: fixed;
+  }
   
-      tr {
-        :last-child {
-          td {
-            border-bottom: 0;
-          }
-        }
-        :hover{
-          background-color: ${theme.palette.gray95};
-          color: ${theme.palette.black};
-          }
-      }
+  .fixed_header tbody{
+    display:block;
+    width: 100%;
+    overflow: auto;
+    height: ${options.height-21}px;
+  }
   
-      th,
-      td {
-        margin: 0;
-        padding: 0.5rem;
-  
-        :last-child {
-          border-right: 0;
-        }
+  .fixed_header thead tr {
+     display: block;
+  }
   
   
+  .fixed_header th, .fixed_header td {
+    text-align: left;
+    width: 300px;
+  }
+
+    tr {
+      :not(.header_row):hover{
+        background-color: ${theme.palette.gray95};
+        color: ${theme.palette.black};
+        cursor: pointer;
+        height: 1.2em; /* more precisely it should be (2.4x2.4)/2.8  */
+        border-color: ${theme.palette.gray95};
+        box-shadow: 0 0 10px ${theme.palette.gray95};
       }
     }
-  
-    .pagination {
-      padding: 0.5rem;
-    }
+  }
   `
     const columns = React.useMemo(
       () => [
-        {
-          Header: 'Header',
-          columns: [
+        
             {
               Header: 'Start',
               accessor: 'start',
@@ -122,8 +120,6 @@ function Table({ columns, data, onRowClick }) {
               accessor: 'comment',
             },
           ],
-        },
-      ],
       []
     )
 
@@ -137,7 +133,7 @@ function Table({ columns, data, onRowClick }) {
                     duration: formatSecsAsDaysHrsMinsSecs(event.duration),
                     timeCategory: event.timeType,
                     reason: event.reason,
-                    comment: event.comment,
+                    comment: "This is a comment. There will be others.Beware",
                     entireRow: event
                 }
             )
@@ -152,6 +148,7 @@ function Table({ columns, data, onRowClick }) {
       <Styles>
         <Table columns={columns} data={data} onRowClick={modalPop}/>
       </Styles>
+
     )
   }
   
