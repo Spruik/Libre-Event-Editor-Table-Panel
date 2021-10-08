@@ -41,6 +41,9 @@ export default function DateTimeSlider({ startDateTime, endDateTime, onAfterChan
             onAfterChange(chosenDateTime);
           }}
         />
+        <div>
+          <h5 style={{ textAlign: 'right' }}>Minutes</h5>
+        </div>
       </div>
       <HorizontalGroup>
         <div>
