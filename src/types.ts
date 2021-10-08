@@ -38,3 +38,7 @@ export interface Reason {
   standardValue: string;
   categoryCode: string;
 }
+
+export interface ResponseWithData extends Response {
+  data: any;
+}

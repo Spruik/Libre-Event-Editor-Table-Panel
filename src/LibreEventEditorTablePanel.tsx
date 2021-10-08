@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import { AppEvents, DataFrame, PanelData, PanelProps, BusEventBase, dateTimeAsMoment } from '@grafana/data';
-import { LibreEventEditorTableOptions, MachineEvent, Reason, Equipment } from 'types';
+import { LibreEventEditorTableOptions, MachineEvent, Reason, Equipment, ResponseWithData } from 'types';
 import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
 import ReasonPanel from './ReasonPanel';
 import { useTheme } from '@grafana/ui';
@@ -61,12 +61,16 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
         .then(ds => {
           try {
             //@ts-ignore
-            ds.request(request).then((payload: Response) => {
+            ds.request(request).then((payload: ResponseWithData) => {
               if (payload?.status === 200) {
-                console.log(payload);
-                dashboardAlert(alertSuccess, `Event Updated`);
-                refreshDashboard();
-                dismissModal();
+                if (payload.data.errors !== undefined) {
+                  //@ts-ignore
+                  dashboardAlert(alertError, `EVENT UPDATE FAILED: ${payload.data.errors[0].message}`);
+                } else {
+                  dashboardAlert(alertSuccess, `Event Successfully Updated`);
+                  refreshDashboard();
+                  dismissModal();
+                }
               }
             });
           } catch (error) {
