@@ -12,6 +12,7 @@ interface TableRecord {
   timeCategory: string;
   reason: string | undefined;
   comment: string | undefined;
+  packmlstate: string;
   rowData: MachineEvent;
 }
 
@@ -110,6 +111,10 @@ export default function StyledTable({ events, setModalData, theme, options }: St
   const columns = React.useMemo(
     () => [
       {
+        Header: 'PackML State',
+        accessor: 'packmlstate',
+      },
+      {
         Header: 'Start',
         accessor: 'start',
       },
@@ -146,6 +151,7 @@ export default function StyledTable({ events, setModalData, theme, options }: St
         timeCategory: event.timeType,
         reason: event.reason,
         comment: event.comment,
+        packmlstate: event.packMLStatus,
         rowData: event,
       };
     });
