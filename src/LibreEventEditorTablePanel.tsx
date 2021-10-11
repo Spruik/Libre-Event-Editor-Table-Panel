@@ -4,6 +4,7 @@ import { LibreEventEditorTableOptions, MachineEvent, Reason, Equipment, Response
 import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
 import ReasonPanel from './ReasonPanel';
 import { useTheme } from '@grafana/ui';
+import StyledTable from 'EventTable';
 
 const { alertError, alertSuccess } = AppEvents;
 
@@ -13,7 +14,7 @@ export class RefreshEvent extends BusEventBase {
   static type = 'refresh';
 }
 
-function formatSecsAsDaysHrsMinsSecs(seconds: number) {
+export function formatSecsAsDaysHrsMinsSecs(seconds: number) {
   const day = Math.floor(seconds / (24 * 3600));
   const hour = Math.floor((seconds - day * 24 * 3600) / (60 * 60));
   const minute = Math.floor((seconds - day * 24 * 3600 - hour * 60 * 60) / 60);
@@ -31,24 +32,6 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
   const [machineEvent, setMachineEvent] = useState<MachineEvent | null>(null);
 
   const theme = useTheme();
-
-  const onRowClick = (e: any, row: MachineEvent) => {
-    const { reasons } = transform(props.data);
-
-    if (reasons && reasons.length > 0) {
-      setMachineEvent(row);
-    }
-  };
-
-  const onMouseHover = (e: any, event: any) => {
-    e.target.parentElement.style.background = theme.palette.gray95;
-    e.target.parentElement.style.color = theme.palette.black;
-  };
-
-  const onMouseLeave = (e: any) => {
-    e.target.parentElement.style.background = null;
-    e.target.parentElement.style.color = null;
-  };
 
   const executeMutation = (request: string) => {
     const eventsRequest = props.data.request?.targets.find(target => {
@@ -127,7 +110,9 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     const request = `
     mutation
       {
-        updateEventLogTS(input:[{eventStartTime:"${event.startDateTime}",equipment:{id:"${equipment.id}"}, comment: "${comment}"}]){
+        updateEventLogTS(input:[{eventStartTime:"${dateTimeAsMoment(event.startDateTime)
+          .utc()
+          .format()}",equipment:{id:"${equipment.id}"}, comment: "${comment}"}]){
           equipment{id}
           eventTime
           reasonCategoryCode
@@ -170,7 +155,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     setMachineEvent(null);
   };
 
-  const { width } = props;
+  const tableOptions = { height: props.height, width: props.width };
   const { reasons, equipment, reasonsWithParents, events } = transform(props.data);
 
   const count = events?.length;
@@ -182,6 +167,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
 
   return (
     <div>
+      <StyledTable events={events} setModalData={setMachineEvent} theme={theme} options={tableOptions} />
       {machineEvent ? (
         <ReasonPanel
           machineEvent={machineEvent}
@@ -196,44 +182,6 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
       ) : (
         <></>
       )}
-      <table width={width}>
-        <thead>
-          <tr>
-            <th>Start</th>
-            <th>End</th>
-            <th>Duration</th>
-            <th>Time Category</th>
-            <th>Reason</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          {events.length > 0 &&
-            events.map(event => {
-              return (
-                <tr
-                  onClick={e => {
-                    return onRowClick(e, event);
-                  }}
-                  onMouseOver={e => {
-                    return onMouseHover(e, event);
-                  }}
-                  onMouseLeave={e => {
-                    return onMouseLeave(e);
-                  }}
-                  key={event.startDateTime}
-                >
-                  <td>{dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
-                  <td>{event.endDateTime && dateTimeAsMoment(event.endDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
-                  <td>{formatSecsAsDaysHrsMinsSecs(event.duration)}</td>
-                  <td>{event.timeType}</td>
-                  <td>{event.reason}</td>
-                  <td>{event.comment}</td>
-                </tr>
-              );
-            })}
-        </tbody>
-      </table>
     </div>
   );
 }
