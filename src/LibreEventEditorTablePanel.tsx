@@ -14,7 +14,7 @@ import { getDataSourceSrv, SystemJS } from '@grafana/runtime';
 import ReasonPanel from './ReasonPanel';
 import { useStyles, useTheme } from '@grafana/ui';
 import css from '@emotion/css';
-import Example from 'ReactTableComponent';
+import StyledTable from 'ReactTableComponent';
 
 const { alertError, alertSuccess } = AppEvents;
 
@@ -196,15 +196,17 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
   const count = events?.length;
   const reasonCount = reasons?.length;
 
+  const tableOptions = {height: props.height, width: props.width}
+
   if (!count || !reasonCount) {
     return <div>No data</div>;
   }
 
-  console.log(useTheme())
+  const theme = useTheme()
 
   return (
     <div>
-      {Example(events,setMachineEvent, useTheme(),props)}
+      <StyledTable events={events} setModalData={setMachineEvent} theme={theme} options={tableOptions} ></StyledTable>
       {machineEvent ? (
         <ReasonPanel
           machineEvent={machineEvent}
@@ -219,44 +221,6 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
       ) : (
         <></>
       )}
-      {/* <table width={width}>
-        <thead>
-          <tr>
-            <th>Start</th>
-            <th>End</th>
-            <th>Duration</th>
-            <th>Time Category</th>
-            <th>Reason</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody style={{height: height, overflowY:'scroll', overflowX: 'hidden'}}>
-          {events.length > 0 &&
-            events.map(event => {
-              return (
-                <tr
-                  onClick={e => {
-                    return onRowClick(e, event);
-                  }}
-                  onMouseOver={e => {
-                    return onMouseHover(e, event);
-                  }}
-                  onMouseLeave={e => {
-                    return onMouseLeave(e);
-                  }}
-                  key={event.startDateTime}
-                >
-                  <td>{dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
-                  <td>{event.endDateTime && dateTimeAsMoment(event.endDateTime).format('YYYY-MM-DD[, ]HH:mm:ss')}</td>
-                  <td>{formatSecsAsDaysHrsMinsSecs(event.duration)}</td>
-                  <td>{event.timeType}</td>
-                  <td>{event.reason}</td>
-                  <td>{event.comment}</td>
-                </tr>
-              );
-            })}
-        </tbody>
-      </table> */}
     </div>
   );
 }

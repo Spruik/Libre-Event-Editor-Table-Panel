@@ -1,13 +1,27 @@
-import { dateTimeAsMoment } from "@grafana/data"
+import { dateTimeAsMoment, GrafanaTheme } from "@grafana/data"
 import { formatSecsAsDaysHrsMinsSecs } from "LibreEventEditorTablePanel"
-import React from "react"
+import React, {ReactElement} from "react"
 import { useTable } from "react-table"
 import styled from 'styled-components'
-import TableScrollbar from 'react-table-scrollbar'
 import { MachineEvent } from "types"
 
+interface TableRecord{
+    start: string;
+    end: string | 0 | undefined;
+    duration: string;
+    timeCategory: string;
+    reason: string | undefined;
+    comment: string | undefined;
+    rowData: MachineEvent;
+}
 
-function Table({ columns, data, onRowClick }) {
+interface TableProps {
+  columns: {Header: string; accessor: string;}[];
+  data: TableRecord[];
+  onRowClick: (row: React.SetStateAction<MachineEvent | null>) => void
+}
+
+function Table({ columns, data, onRowClick }: TableProps) {
     // Use the state and functions returned from useTable to build your UI
     const {
       getTableProps,
@@ -36,7 +50,7 @@ function Table({ columns, data, onRowClick }) {
           {rows.map((row, i) => {
             prepareRow(row)
             return (
-              <tr {...row.getRowProps()} onClick={() => {onRowClick(row.original.entireRow)}}>
+              <tr {...row.getRowProps()} onClick={() => {onRowClick(row.original.rowData)}}>
                 {row.cells.map(cell => {
                   return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 })}
@@ -48,10 +62,16 @@ function Table({ columns, data, onRowClick }) {
     )
   }
 
- 
-  function Example( events: MachineEvent[], modalPop, theme, options) {
-    const Styles = styled.div`
-
+  interface StyledTableProps{
+    events: MachineEvent[],
+    setModalData: (row: React.SetStateAction<MachineEvent | null>) => void
+    theme: GrafanaTheme | any,
+    options: {height: number, width: number}
+  }
+  
+  export default function StyledTable ({events, setModalData, theme, options}: StyledTableProps): ReactElement {
+  
+    const Style = styled.div`
     table{
       width:100%
 
@@ -133,8 +153,8 @@ function Table({ columns, data, onRowClick }) {
                     duration: formatSecsAsDaysHrsMinsSecs(event.duration),
                     timeCategory: event.timeType,
                     reason: event.reason,
-                    comment: "This is a comment. There will be others.Beware",
-                    entireRow: event
+                    comment: event.comment,
+                    rowData: event
                 }
             )
         })
@@ -145,12 +165,8 @@ function Table({ columns, data, onRowClick }) {
     const data = React.useMemo(() => makeData(events), [])
   
     return (
-      <Styles>
-        <Table columns={columns} data={data} onRowClick={modalPop}/>
-      </Styles>
-
+      <Style>
+        <Table columns={columns} data={data} onRowClick={setModalData}/>
+      </Style>
     )
-  }
-  
-  export default Example
-  
+  } 
