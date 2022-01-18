@@ -72,7 +72,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     const firstEventStartTime = dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
     const secondEventStartTime = dateTimeAsMoment(newDateTime).format('YYYY-MM-DDTHH:mm:ssZ');
     const request = `mutation{
-      splitEventLogTS(input:[{eventStartTime:"${firstEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}},{eventStartTime:"${secondEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}}]){
+      splitEventLogTs(input:[{eventStartTime:"${firstEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}},{eventStartTime:"${secondEventStartTime}", packMLStatus:"${event.packMLStatus}", equipment: {id:"${equipment.id}"}}]){
         eventTime
       }
     }`;
@@ -84,7 +84,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     const request = `
     mutation
       {
-        updateEventLogTS(input:[{eventStartTime:"${dateTimeAsMoment(event.startDateTime)
+        updateEventLogTs(input:[{eventStartTime:"${dateTimeAsMoment(event.startDateTime)
           .utc()
           .format()}",equipment:{id:"${equipment.id}"}, reasonText: "${reason.text}", reasonCategoryCode:"${
       reason.categoryCode
@@ -110,7 +110,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
     const request = `
     mutation
       {
-        updateEventLogTS(input:[{eventStartTime:"${dateTimeAsMoment(event.startDateTime)
+        updateEventLogTs(input:[{eventStartTime:"${dateTimeAsMoment(event.startDateTime)
           .utc()
           .format()}",equipment:{id:"${equipment.id}"}, comment: "${comment}"}]){
           equipment{id}
