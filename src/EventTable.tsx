@@ -74,28 +74,30 @@ export default function StyledTable({ events, setModalData, theme, options }: St
     table{
       width:100%
     }
-    padding-left: 5px;
     
     .fixed_header{
       table-layout: fixed;
-  }
+    }
   
-  .fixed_header tbody{
-    display:block;
-    width: 100%;
-    overflow: auto;
-    height: ${options.height - 21}px;
-  }
+    .fixed_header tbody{
+      display:block;
+      width: 100%;
+      overflow: auto;
+      height: ${options.height - 21}px;
+    }
   
-  .fixed_header thead tr {
-     display: block;
-  }
+    .fixed_header thead tr {
+      display: block;
+    }
   
   
-  .fixed_header th, .fixed_header td {
-    text-align: left;
-    width: 300px;
-  }
+    .fixed_header th, .fixed_header td {
+      text-align: left;
+      padding-left: 5px;
+      width: 300px;
+      border: 1px solid #9a9a9a;
+    }
+
     tr {
       :not(.header_row):hover{
         background-color: ${theme.palette.gray95};
@@ -106,7 +108,6 @@ export default function StyledTable({ events, setModalData, theme, options }: St
         box-shadow: 0 0 10px ${theme.palette.gray95};
       }
     }
-  }
   `;
   const columns = React.useMemo(
     () => [
