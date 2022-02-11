@@ -79,28 +79,35 @@ export default function StyledTable({ events, setModalData, theme, options }: St
     .fixed_header tbody{
       display: block;
       width: 100%;
-      overflow: overlay;
-      height: ${options.height - 21}px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      height: ${options.height - 35}px;
     }
   
     .header_row{
       display: flex;
+      background: ${theme.type == 'dark' ? 'rgb(34, 37, 43)' : 'rgb(244, 245, 245)'};
       color: #33A2E5;
       width: 100%;
     }
 
-    .fixed_header th{
-      width: 14.2857143%;
+    .fixed_header th, .fixed_header td{
+      width: ${options.width / 7}px;
       text-align: left;
       padding: 6px;
-      border: 1px solid #9a9a9a;
+      border-right: ${theme.type == 'dark' ? '1px solid rgba(204, 204, 220, 0.07)' : '1px solid rgba(36, 41, 46, 0.12)'};
     }
-     
-    .fixed_header td{
-      width: 14.2857143%;
-      text-align: left;
-      padding: 6px;
-      border: 1px solid #9a9a9a;
+
+    .fixed_header th:last-child, .fixed_header td:last-child{
+      border-right: none;
+    }
+
+    .fixed_header td:last-child{
+      width: ${(options.width / 7) - 7}px;
+    }
+
+    .fixed_header tr{
+      border-bottom: ${theme.type == 'dark' ? '1px solid rgba(204, 204, 220, 0.07)' : '1px solid rgba(36, 41, 46, 0.12)'};
     }
 
     tr {
