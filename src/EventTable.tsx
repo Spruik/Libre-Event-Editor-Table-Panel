@@ -71,31 +71,43 @@ interface StyledTableProps {
 
 export default function StyledTable({ events, setModalData, theme, options }: StyledTableProps): ReactElement {
   const Style = styled.div`
-    table{
-      width:100%
-    }
-    
     .fixed_header{
       table-layout: fixed;
+      width: 100%;
     }
   
     .fixed_header tbody{
-      display:block;
-      width: 100%;
-      overflow: auto;
-      height: ${options.height - 21}px;
-    }
-  
-    .fixed_header thead tr {
       display: block;
+      width: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      height: ${options.height - 35}px;
     }
   
-  
-    .fixed_header th, .fixed_header td {
+    .header_row{
+      display: flex;
+      background: ${theme.type == 'dark' ? 'rgb(34, 37, 43)' : 'rgb(244, 245, 245)'};
+      color: #33A2E5;
+      width: 100%;
+    }
+
+    .fixed_header th, .fixed_header td{
+      width: ${options.width / 7}px;
       text-align: left;
-      padding-left: 5px;
-      width: 300px;
-      border: 1px solid #9a9a9a;
+      padding: 6px;
+      border-right: ${theme.type == 'dark' ? '1px solid rgba(204, 204, 220, 0.07)' : '1px solid rgba(36, 41, 46, 0.12)'};
+    }
+
+    .fixed_header th:last-child, .fixed_header td:last-child{
+      border-right: none;
+    }
+
+    .fixed_header td:last-child{
+      width: ${(options.width / 7) - 7}px;
+    }
+
+    .fixed_header tr{
+      border-bottom: ${theme.type == 'dark' ? '1px solid rgba(204, 204, 220, 0.07)' : '1px solid rgba(36, 41, 46, 0.12)'};
     }
 
     tr {
@@ -112,10 +124,6 @@ export default function StyledTable({ events, setModalData, theme, options }: St
   const columns = React.useMemo(
     () => [
       {
-        Header: 'PackML State',
-        accessor: 'packmlstate',
-      },
-      {
         Header: 'Start',
         accessor: 'start',
       },
@@ -128,6 +136,10 @@ export default function StyledTable({ events, setModalData, theme, options }: St
         accessor: 'duration',
       },
       {
+        Header: 'PackML State',
+        accessor: 'packmlstate',
+      },
+      {
         Header: 'Time Category',
         accessor: 'timeCategory',
       },
@@ -138,7 +150,7 @@ export default function StyledTable({ events, setModalData, theme, options }: St
       {
         Header: 'Comment',
         accessor: 'comment',
-      },
+      }
     ],
     []
   );
