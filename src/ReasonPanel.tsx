@@ -51,21 +51,24 @@ export default function ReasonPanel({
             <Button onClick={() => onEditComment(equipment, machineEvent, finalComment)}>Edit Comment</Button>
           </div>
         </div>
-        <hr />
+        <hr style={{"borderTop": "4px solid #343436"}}/>
         <div>
           <VerticalGroup>
             <h3> Assign Reason to Event </h3>
-            <div>
-              <ReasonSelector
+            <div >
+              <ReasonSelector 
                 reasons={reasons}
                 onFinalReasonSelection={reason => {
                   console.log(finalReason);
                   setFinalReason(reason);
                 }}
               ></ReasonSelector>
+              
             </div>
             <div>
+              <div>
               {finalReason && (
+                <div>
                 <HorizontalGroup>
                   <Button
                     size="md"
@@ -76,11 +79,14 @@ export default function ReasonPanel({
                     Assign Reason
                   </Button>
                 </HorizontalGroup>
+                </div>
               )}
+              </div>
+              
             </div>
           </VerticalGroup>
         </div>
-        <hr />
+        <hr style={{"borderTop": "4px solid #343436"}}/>
         <div>
           <DateTimeSlider
             startDateTime={new Date(machineEventStartTime)}

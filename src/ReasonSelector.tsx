@@ -32,9 +32,10 @@ export const ReasonSelector = ({ reasons, onFinalReasonSelection, parentReason }
   }
 
   return (
-    <VerticalGroup>
+    <VerticalGroup spacing="lg">
       <div>
-        <HorizontalGroup spacing="lg">
+      
+        <HorizontalGroup spacing="sm" wrap={true} >
           {reasons.length > 0 &&
             shownReasons.map(reason => {
               return (
@@ -55,15 +56,20 @@ export const ReasonSelector = ({ reasons, onFinalReasonSelection, parentReason }
                 </Button>
               );
             })}
+            
         </HorizontalGroup>
+        
       </div>
-      <div>
+      <div style={{"width":"100%"}}>
         {selectedReason && (
-          <ReasonSelector
-            reasons={reasons}
-            parentReason={selectedReason}
-            onFinalReasonSelection={onFinalReasonSelection}
-          ></ReasonSelector>
+          <div>
+            <hr style={{"marginTop":"0px","marginBottom":"16px"}}/>
+            <ReasonSelector
+              reasons={reasons}
+              parentReason={selectedReason}
+              onFinalReasonSelection={onFinalReasonSelection}
+            ></ReasonSelector>
+          </div>
         )}
       </div>
     </VerticalGroup>
