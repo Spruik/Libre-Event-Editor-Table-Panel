@@ -25,7 +25,7 @@ export default function DateTimeSlider({ startDateTime, endDateTime, onAfterChan
       <div>
         <Slider
           step={true ? 1 : undefined}
-          value={[0]}
+          value={0}
           min={0}
           max={numberOfFiveMinSegments}
           tooltipAlwaysVisible={true}
@@ -37,7 +37,7 @@ export default function DateTimeSlider({ startDateTime, endDateTime, onAfterChan
                 .toDate()
             );
           }}
-          onAfterChange={(value: number[]) => {
+          onAfterChange={(value?: number | undefined) => {
             onAfterChange(chosenDateTime);
           }}
         />

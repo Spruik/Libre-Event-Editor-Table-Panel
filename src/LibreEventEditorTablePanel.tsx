@@ -34,7 +34,7 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
   const theme = useTheme();
 
   const executeMutation = (request: string) => {
-    const eventsRequest = props.data.request?.targets.find(target => {
+    const eventsRequest: any = props.data.request?.targets.find(target => {
       return target.refId === props.options.eventMetric;
     });
 

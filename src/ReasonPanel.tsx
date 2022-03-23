@@ -38,7 +38,6 @@ export default function ReasonPanel({
           <h3> Edit Event Comment </h3>
           <div>
             <TextArea
-              css={{}}
               invalid={false}
               placeholder={'Type your comment here'}
               disabled={false}
