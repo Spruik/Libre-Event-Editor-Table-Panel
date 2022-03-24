@@ -34,8 +34,8 @@ function Table({ columns, data, onRowClick }: TableProps) {
   return (
     <table className="fixed_header" {...getTableProps()}>
       <thead>
-        {headerGroups.map((headerGroup) => (
-          <tr className="header_row" {...headerGroup.getHeaderGroupProps()}>
+        {headerGroups.map((headerGroup, index) => (
+          <tr key={index + ""} className="header_row" {...headerGroup.getHeaderGroupProps()}>
             {headerGroup.headers.map((column) => (
               <th {...column.getHeaderProps()}>{column.render("Header")}</th>
             ))}
@@ -92,7 +92,7 @@ export default function StyledTable({
 
     .header_row {
       display: flex;
-      background: ${theme.type == "dark"
+      background: ${theme.type === "dark"
         ? "rgb(34, 37, 43)"
         : "rgb(244, 245, 245)"};
       color: #33a2e5;
@@ -104,7 +104,7 @@ export default function StyledTable({
       width: ${options.width / 7}px;
       text-align: left;
       padding: 6px;
-      border-right: ${theme.type == "dark"
+      border-right: ${theme.type === "dark"
         ? "1px solid rgba(204, 204, 220, 0.07)"
         : "1px solid rgba(36, 41, 46, 0.12)"};
     }
@@ -119,7 +119,7 @@ export default function StyledTable({
     }
 
     .fixed_header tr {
-      border-bottom: ${theme.type == "dark"
+      border-bottom: ${theme.type === "dark"
         ? "1px solid rgba(204, 204, 220, 0.07)"
         : "1px solid rgba(36, 41, 46, 0.12)"};
     }
