@@ -1,9 +1,9 @@
-import { dateTimeAsMoment, GrafanaTheme } from '@grafana/data';
-import { formatSecsAsDaysHrsMinsSecs } from 'LibreEventEditorTablePanel';
-import React, { ReactElement } from 'react';
-import { useTable } from 'react-table';
-import styled from 'styled-components';
-import { MachineEvent } from 'types';
+import { dateTimeAsMoment, GrafanaTheme } from "@grafana/data";
+import { formatSecsAsDaysHrsMinsSecs } from "LibreEventEditorTablePanel";
+import React, { ReactElement } from "react";
+import { useTable } from "react-table";
+import styled from "styled-components";
+import { MachineEvent } from "types";
 
 interface TableRecord {
   start: string;
@@ -24,19 +24,20 @@ interface TableProps {
 
 function Table({ columns, data, onRowClick }: TableProps) {
   // Use the state and functions returned from useTable to build your UI
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } = useTable({
-    columns,
-    data,
-  });
+  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
+    useTable({
+      columns,
+      data,
+    });
 
   // Render the UI for your table
   return (
     <table className="fixed_header" {...getTableProps()}>
       <thead>
-        {headerGroups.map(headerGroup => (
+        {headerGroups.map((headerGroup) => (
           <tr className="header_row" {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map(column => (
-              <th {...column.getHeaderProps()}>{column.render('Header')}</th>
+            {headerGroup.headers.map((column) => (
+              <th {...column.getHeaderProps()}>{column.render("Header")}</th>
             ))}
           </tr>
         ))}
@@ -51,8 +52,8 @@ function Table({ columns, data, onRowClick }: TableProps) {
                 onRowClick(row.original.rowData);
               }}
             >
-              {row.cells.map(cell => {
-                return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>;
+              {row.cells.map((cell) => {
+                return <td {...cell.getCellProps()}>{cell.render("Cell")}</td>;
               })}
             </tr>
           );
@@ -69,49 +70,62 @@ interface StyledTableProps {
   options: { height: number; width: number };
 }
 
-export default function StyledTable({ events, setModalData, theme, options }: StyledTableProps): ReactElement {
+export default function StyledTable({
+  events,
+  setModalData,
+  theme,
+  options,
+}: StyledTableProps): ReactElement {
   const Style = styled.div`
-    .fixed_header{
+    .fixed_header {
       table-layout: fixed;
       width: 100%;
     }
-  
-    .fixed_header tbody{
+
+    .fixed_header tbody {
       display: block;
       width: 100%;
       overflow-y: auto;
       overflow-x: hidden;
       height: ${options.height - 35}px;
     }
-  
-    .header_row{
+
+    .header_row {
       display: flex;
-      background: ${theme.type == 'dark' ? 'rgb(34, 37, 43)' : 'rgb(244, 245, 245)'};
-      color: #33A2E5;
+      background: ${theme.type == "dark"
+        ? "rgb(34, 37, 43)"
+        : "rgb(244, 245, 245)"};
+      color: #33a2e5;
       width: 100%;
     }
 
-    .fixed_header th, .fixed_header td{
+    .fixed_header th,
+    .fixed_header td {
       width: ${options.width / 7}px;
       text-align: left;
       padding: 6px;
-      border-right: ${theme.type == 'dark' ? '1px solid rgba(204, 204, 220, 0.07)' : '1px solid rgba(36, 41, 46, 0.12)'};
+      border-right: ${theme.type == "dark"
+        ? "1px solid rgba(204, 204, 220, 0.07)"
+        : "1px solid rgba(36, 41, 46, 0.12)"};
     }
 
-    .fixed_header th:last-child, .fixed_header td:last-child{
+    .fixed_header th:last-child,
+    .fixed_header td:last-child {
       border-right: none;
     }
 
-    .fixed_header td:last-child{
-      width: ${(options.width / 7) - 7}px;
+    .fixed_header td:last-child {
+      width: ${options.width / 7 - 7}px;
     }
 
-    .fixed_header tr{
-      border-bottom: ${theme.type == 'dark' ? '1px solid rgba(204, 204, 220, 0.07)' : '1px solid rgba(36, 41, 46, 0.12)'};
+    .fixed_header tr {
+      border-bottom: ${theme.type == "dark"
+        ? "1px solid rgba(204, 204, 220, 0.07)"
+        : "1px solid rgba(36, 41, 46, 0.12)"};
     }
 
     tr {
-      :not(.header_row):hover{
+      :not(.header_row):hover {
         background-color: ${theme.palette.gray95};
         color: ${theme.palette.black};
         cursor: pointer;
@@ -124,33 +138,33 @@ export default function StyledTable({ events, setModalData, theme, options }: St
   const columns = React.useMemo(
     () => [
       {
-        Header: 'Start',
-        accessor: 'start',
+        Header: "Start",
+        accessor: "start",
       },
       {
-        Header: 'End',
-        accessor: 'end',
+        Header: "End",
+        accessor: "end",
       },
       {
-        Header: 'Duration',
-        accessor: 'duration',
+        Header: "Duration",
+        accessor: "duration",
       },
       {
-        Header: 'PackML State',
-        accessor: 'packmlstate',
+        Header: "PackML State",
+        accessor: "packmlstate",
       },
       {
-        Header: 'Time Category',
-        accessor: 'timeCategory',
+        Header: "Time Category",
+        accessor: "timeCategory",
       },
       {
-        Header: 'Reason',
-        accessor: 'reason',
+        Header: "Reason",
+        accessor: "reason",
       },
       {
-        Header: 'Comment',
-        accessor: 'comment',
-      }
+        Header: "Comment",
+        accessor: "comment",
+      },
     ],
     []
   );
@@ -158,8 +172,12 @@ export default function StyledTable({ events, setModalData, theme, options }: St
   const makeData = (events: MachineEvent[]) => {
     return events.map((event: MachineEvent) => {
       return {
-        start: dateTimeAsMoment(event.startDateTime).format('YYYY-MM-DD[, ]HH:mm:ss'),
-        end: event.endDateTime && dateTimeAsMoment(event.endDateTime).format('YYYY-MM-DD[, ]HH:mm:ss'),
+        start: dateTimeAsMoment(event.startDateTime).format(
+          "YYYY-MM-DD[, ]HH:mm:ss"
+        ),
+        end:
+          event.endDateTime &&
+          dateTimeAsMoment(event.endDateTime).format("YYYY-MM-DD[, ]HH:mm:ss"),
         duration: formatSecsAsDaysHrsMinsSecs(event.duration),
         timeCategory: event.timeType,
         reason: event.reason,
