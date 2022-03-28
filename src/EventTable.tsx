@@ -38,10 +38,9 @@ function Table({ columns, data, onRowClick }: TableProps) {
           <tr
             key={index + ""}
             className="header_row"
-            {...headerGroup.getHeaderGroupProps()}
           >
             {headerGroup.headers.map((column, index) => (
-              <th key={index + ""} {...column.getHeaderProps()}>
+              <th key={index + ""}>
                 {column.render("Header")}
               </th>
             ))}
@@ -54,14 +53,13 @@ function Table({ columns, data, onRowClick }: TableProps) {
           return (
             <tr
               key={index + ""}
-              {...row.getRowProps()}
               onClick={() => {
                 onRowClick(row.original.rowData);
               }}
             >
               {row.cells.map((cell, index) => {
                 return (
-                  <td key={index.toString()} {...cell.getCellProps()}>
+                  <td key={index + ""}>
                     {cell.render("Cell")}
                   </td>
                 );
