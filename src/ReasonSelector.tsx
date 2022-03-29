@@ -1,6 +1,6 @@
-import { Button, HorizontalGroup, VerticalGroup } from '@grafana/ui';
-import React, { useState } from 'react';
-import { Reason } from './types';
+import { Button, HorizontalGroup, VerticalGroup } from "@grafana/ui";
+import React, { useState } from "react";
+import { Reason } from "./types";
 
 interface Props {
   reasons: Reason[];
@@ -20,7 +20,11 @@ const filterReasons = (reasons: Reason[], parentReason: Reason | undefined) => {
   });
 };
 
-export const ReasonSelector = ({ reasons, onFinalReasonSelection, parentReason }: Props) => {
+export const ReasonSelector = ({
+  reasons,
+  onFinalReasonSelection,
+  parentReason,
+}: Props) => {
   const shownReasons = filterReasons(reasons, parentReason);
   const [selectedReason, setSelectedReason] = useState<Reason | undefined>();
 
@@ -36,12 +40,14 @@ export const ReasonSelector = ({ reasons, onFinalReasonSelection, parentReason }
       <div>
         <HorizontalGroup spacing="lg">
           {reasons.length > 0 &&
-            shownReasons.map(reason => {
+            shownReasons.map((reason) => {
               return (
                 <Button
                   key={reason.id}
-                  variant={reason.id !== selectedReason?.id ? 'primary' : 'destructive'}
-                  size={'sm'}
+                  variant={
+                    reason.id !== selectedReason?.id ? "primary" : "destructive"
+                  }
+                  size={"sm"}
                   onClick={() => {
                     if (reason === selectedReason) {
                       setSelectedReason(undefined);

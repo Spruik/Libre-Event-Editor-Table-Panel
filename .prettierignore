@@ -1,0 +1,7 @@
+dist
+.github
+.vscode
+.yarn
+coverage
+docs
+node_modules

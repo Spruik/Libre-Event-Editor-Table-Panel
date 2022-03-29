@@ -1,17 +1,35 @@
-import { Button, HorizontalGroup, Modal, TextArea, VerticalGroup } from '@grafana/ui';
-import DateTimeSlider from 'DateTimeSlider';
-import React, { ReactElement, useState } from 'react';
-import { ReasonSelector } from 'ReasonSelector';
-import { Equipment, MachineEvent, Reason } from './types';
+import {
+  Button,
+  HorizontalGroup,
+  Modal,
+  TextArea,
+  VerticalGroup,
+} from "@grafana/ui";
+import DateTimeSlider from "DateTimeSlider";
+import React, { ReactElement, useState } from "react";
+import { ReasonSelector } from "ReasonSelector";
+import { Equipment, MachineEvent, Reason } from "./types";
 interface Props {
   machineEvent: MachineEvent;
   equipment: Equipment;
   title: string;
   reasons: Reason[];
   dismissModal: () => void;
-  onAssignReason: (equipment: Equipment, event: MachineEvent, reason: Reason) => void;
-  onSplitEvent: (equipment: Equipment, event: MachineEvent, newDateTime: Date) => void;
-  onEditComment: (equipment: Equipment, event: MachineEvent, comment: string) => void;
+  onAssignReason: (
+    equipment: Equipment,
+    event: MachineEvent,
+    reason: Reason
+  ) => void;
+  onSplitEvent: (
+    equipment: Equipment,
+    event: MachineEvent,
+    newDateTime: Date
+  ) => void;
+  onEditComment: (
+    equipment: Equipment,
+    event: MachineEvent,
+    comment: string
+  ) => void;
 }
 
 export default function ReasonPanel({
@@ -25,29 +43,46 @@ export default function ReasonPanel({
   onEditComment,
 }: Props): ReactElement {
   const [finalReason, setFinalReason] = useState<Reason | undefined>(undefined);
-  const [finalDateTime, setFinalDateTime] = useState<Date | undefined>(undefined);
-  const [finalComment, setFinalComment] = useState<string>(machineEvent.comment ? machineEvent.comment : '');
+  const [finalDateTime, setFinalDateTime] = useState<Date | undefined>(
+    undefined
+  );
+  const [finalComment, setFinalComment] = useState<string>(
+    machineEvent.comment ? machineEvent.comment : ""
+  );
 
-  const machineEventEndTime = machineEvent?.endDateTime ? new Date(machineEvent.endDateTime) : new Date();
+  const machineEventEndTime = machineEvent?.endDateTime
+    ? new Date(machineEvent.endDateTime)
+    : new Date();
   const machineEventStartTime = new Date(machineEvent.startDateTime);
 
   return (
-    <Modal isOpen={!!machineEvent} title={title} onDismiss={dismissModal} onClickBackdrop={dismissModal}>
+    <Modal
+      isOpen={!!machineEvent}
+      title={title}
+      onDismiss={dismissModal}
+      onClickBackdrop={dismissModal}
+    >
       <div>
         <div>
           <h3> Edit Event Comment </h3>
           <div>
             <TextArea
               invalid={false}
-              placeholder={'Type your comment here'}
+              placeholder={"Type your comment here"}
               disabled={false}
               value={finalComment}
               //@ts-ignore
-              onChange={value => setFinalComment(value.target.value)}
+              onChange={(value) => setFinalComment(value.target.value)}
             />
           </div>
           <div>
-            <Button onClick={() => onEditComment(equipment, machineEvent, finalComment)}>Edit Comment</Button>
+            <Button
+              onClick={() =>
+                onEditComment(equipment, machineEvent, finalComment)
+              }
+            >
+              Edit Comment
+            </Button>
           </div>
         </div>
         <hr />
@@ -57,7 +92,7 @@ export default function ReasonPanel({
             <div>
               <ReasonSelector
                 reasons={reasons}
-                onFinalReasonSelection={reason => {
+                onFinalReasonSelection={(reason) => {
                   console.log(finalReason);
                   setFinalReason(reason);
                 }}
@@ -94,8 +129,8 @@ export default function ReasonPanel({
                     onSplitEvent(equipment, machineEvent, finalDateTime);
                   }}
                 >
-                  {' '}
-                  Split Event{' '}
+                  {" "}
+                  Split Event{" "}
                 </Button>
               )}
             </div>
