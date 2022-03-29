@@ -53,9 +53,7 @@ function Table({ columns, data, onRowClick }: TableProps) {
               }}
             >
               {row.cells.map((cell, index) => {
-                return (
-                <td key={index + ""}>{cell.render("Cell")}</td>
-                );
+                return <td key={index + ""}>{cell.render("Cell")}</td>;
               })}
             </tr>
           );
