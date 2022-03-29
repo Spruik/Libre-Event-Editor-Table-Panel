@@ -59,7 +59,7 @@ function Table({ columns, data, onRowClick }: TableProps) {
             >
               {row.cells.map((cell, index) => {
                 return (
-                  <td key={index + ""}>
+                  <td key={index.toString()}>
                     {cell.render("Cell")}
                   </td>
                 );
