@@ -35,14 +35,9 @@ function Table({ columns, data, onRowClick }: TableProps) {
     <table className="fixed_header" {...getTableProps()}>
       <thead>
         {headerGroups.map((headerGroup, index) => (
-          <tr
-            key={index + ""}
-            className="header_row"
-          >
+          <tr key={index + ""} className="header_row">
             {headerGroup.headers.map((column, index) => (
-              <th key={index + ""}>
-                {column.render("Header")}
-              </th>
+              <th key={index + ""}>{column.render("Header")}</th>
             ))}
           </tr>
         ))}
@@ -58,11 +53,7 @@ function Table({ columns, data, onRowClick }: TableProps) {
               }}
             >
               {row.cells.map((cell, index) => {
-                return (
-                  <td key={index.toString()}>
-                    {cell.render("Cell")}
-                  </td>
-                );
+                return (<td key={index + ""}>{cell.render("Cell")}</td>);
               })}
             </tr>
           );
