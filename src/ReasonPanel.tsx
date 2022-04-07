@@ -85,7 +85,7 @@ export default function ReasonPanel({
             </Button>
           </div>
         </div>
-        <hr style={{"borderTop": "4px solid #343436"}}/>
+        <hr style={{ borderTop: "4px solid #343436" }} />
         <div>
           <VerticalGroup>
             <h3> Assign Reason to Event </h3>
@@ -114,7 +114,7 @@ export default function ReasonPanel({
             </div>
           </VerticalGroup>
         </div>
-        <hr style={{"borderTop": "4px solid #343436"}}/>
+        <hr style={{ borderTop: "4px solid #343436" }} />
         <div>
           <DateTimeSlider
             startDateTime={new Date(machineEventStartTime)}

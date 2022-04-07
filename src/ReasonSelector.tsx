@@ -63,10 +63,10 @@ export const ReasonSelector = ({
             })}
         </HorizontalGroup>
       </div>
-      <div style={{"width":"100%"}}>
+      <div style={{ width: "100%" }}>
         {selectedReason && (
           <div>
-            <hr style={{"marginTop":"0px","marginBottom":"16px"}}/>
+            <hr style={{ marginTop: "0px", marginBottom: "16px" }} />
             <ReasonSelector
               reasons={reasons}
               parentReason={selectedReason}
