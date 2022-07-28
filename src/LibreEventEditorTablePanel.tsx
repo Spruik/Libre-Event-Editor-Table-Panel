@@ -126,7 +126,9 @@ export default function LibreEventEditorTablePanel(props: Props): ReactElement {
           .utc()
           .format()}",equipment:{id:"${equipment.id}"}, reasonText: "${
       reason.text
-    }", reasonCode: "${reason.label}", reasonCategoryCode:"${reason.categoryCode}"}]){
+    }", reasonCode: "${reason.label}", reasonCategoryCode:"${
+      reason.categoryCode
+    }"}]){
           equipment{id}
           eventTime
           reasonCategoryCode
