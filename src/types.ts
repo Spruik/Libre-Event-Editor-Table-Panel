@@ -4,13 +4,13 @@ export interface LibreEventEditorTableOptions {
 }
 
 export const MACHINE_EVENT_COLUMNS = [
-  'startDateTime',
-  'endDateTime',
-  'duration',
-  'reasonCategoryCode',
-  'reasonText',
-  'reasonCode',
-  'comments',
+  "startDateTime",
+  "endDateTime",
+  "duration",
+  "reasonCategoryCode",
+  "reasonText",
+  "reasonCode",
+  "comments",
 ];
 export interface Equipment {
   id: string;
@@ -26,7 +26,14 @@ export interface MachineEvent {
   comment?: string;
 }
 
-export const REASON_COLUMNS = ['id', 'isActive', 'class', 'label', 'text', 'standardValue'];
+export const REASON_COLUMNS = [
+  "id",
+  "isActive",
+  "class",
+  "label",
+  "text",
+  "standardValue",
+];
 
 export interface Reason {
   id: string;
