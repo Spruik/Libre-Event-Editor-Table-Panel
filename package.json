@@ -27,7 +27,7 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@grafana/runtime": "^7.4.5",
+    "@grafana/runtime": "^9.3.6",
     "@types/moment": "^2.13.0"
   }
 }
